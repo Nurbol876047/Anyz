@@ -1,20 +1,20 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from flask import Flask, Response, jsonify, send_file
-
 
 BASE_DIR = Path(__file__).resolve().parent
 
 TRACKS = {
     "one": {
         "title": "1 саусақ: басқа әуен",
-        "path": Path("/home/nurbol/Rendix/public/kaze-no-kata.mp3"),
+        "path": BASE_DIR / "track1.mp3",
     },
     "two": {
         "title": "2 саусақ: Төлеген Момбеков - Бозінген (күй)",
-        "path": Path("/home/nurbol/Загрузки/Төлеген Момбеков - Бозінген (күй).mp3"),
+        "path": BASE_DIR / "Төлеген Момбеков - Бозінген (күй).mp3",
     },
 }
 
@@ -92,4 +92,5 @@ def health() -> Response:
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=4173, debug=False, use_reloader=False, threaded=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False, threaded=True)
