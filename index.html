@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Күй аңызы — MediaPipe басқаруы</title>
+  <title>Күй аңызы — MediaPipe JS басқаруы</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Marcellus&display=swap');
 
@@ -849,6 +849,8 @@
     }
 
     .camera-frame {
+      position: relative;
+      aspect-ratio: 16 / 9;
       border-radius: 22px;
       overflow: hidden;
       border: 1px solid rgba(236, 191, 104, 0.12);
@@ -856,12 +858,80 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
     }
 
-    .camera-frame img {
+    .camera-frame video,
+    .camera-frame canvas {
       display: block;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      height: 100%;
       object-fit: cover;
       background: #120908;
+      transform: scaleX(-1);
+    }
+
+    .camera-frame canvas,
+    .camera-fallback,
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    .camera-frame canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .camera-fallback {
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: #f7e7bf;
+      font-size: 1.1rem;
+      line-height: 1.35;
+      background:
+        radial-gradient(circle at top, rgba(93, 184, 243, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(18, 9, 8, 0.42), rgba(18, 9, 8, 0.92));
+      transition: opacity 0.3s ease;
+    }
+
+    .camera-fallback.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .camera-overlay {
+      z-index: 4;
+      display: grid;
+      align-content: end;
+      gap: 10px;
+      padding: 16px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(8, 5, 3, 0) 55%, rgba(8, 5, 3, 0.58) 100%);
+    }
+
+    .camera-overlay__label {
+      color: #f7e7bf;
+      font-size: 1rem;
+      line-height: 1.3;
+      text-shadow: 0 6px 16px rgba(0, 0, 0, 0.42);
+    }
+
+    .hold-meter {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hold-meter__fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f0c271, #79d3a2);
+      transition: width 0.12s linear;
     }
 
     .metrics {
@@ -1212,7 +1282,7 @@
 <body>
   <div class="page">
     <header class="hero">
-      <div class="hero__eyebrow">Python + MediaPipe басқаруы</div>
+      <div class="hero__eyebrow">Frontend JS + MediaPipe басқаруы</div>
       <h1>Күй аңызы</h1>
       <p>
         Төмендегі батырмалар алынып тасталды. Енді көрініс
@@ -1484,13 +1554,21 @@
       <aside class="camera-shell shell">
         <div class="camera-head">
           <h2>Қолмен басқару панелі</h2>
-          <p>MediaPipe камерадан саусақ қимылын таниды. 1 саусақ бірінші тректі, 2 саусақ “Бозінген” күйін ойнатады.</p>
+          <p>Енді MediaPipe браузердің ішінде JavaScript арқылы жұмыс істейді. 1 саусақ бірінші тректі, 2 саусақ “Бозінген” күйін іске қосады.</p>
         </div>
 
         <button id="unlockBtn" class="unlock-btn">Дыбысты іске қосу</button>
 
-        <div class="camera-frame">
-          <img src="/video_feed" alt="MediaPipe камера көрінісі">
+        <div id="cameraFrame" class="camera-frame">
+          <video id="cameraVideo" playsinline autoplay muted aria-label="Камера көрінісі"></video>
+          <canvas id="cameraCanvas" aria-hidden="true"></canvas>
+          <div id="cameraFallback" class="camera-fallback">JS MediaPipe мен камера жүктеліп жатыр...</div>
+          <div class="camera-overlay" aria-hidden="true">
+            <div id="cameraOverlayLabel" class="camera-overlay__label">Қол тану дайындалуда...</div>
+            <div class="hold-meter">
+              <span id="holdFill" class="hold-meter__fill"></span>
+            </div>
+          </div>
         </div>
 
         <div class="metrics">
@@ -1507,8 +1585,8 @@
             <strong id="sceneState">Күту режімі</strong>
           </div>
           <div class="metric">
-            <span>Жүйе статусы</span>
-            <strong id="backendState">MediaPipe іске қосылып жатыр...</strong>
+            <span>JS тану статусы</span>
+            <strong id="systemState">MediaPipe JS іске қосылып жатыр...</strong>
           </div>
         </div>
 
@@ -1536,6 +1614,7 @@
           <h3>Қалай қолданасыз</h3>
           <ul>
             <li>Алдымен “Дыбысты іске қосу” батырмасын бір рет басыңыз.</li>
+            <li>Браузер камера сұраса, рұқсат беріңіз.</li>
             <li>Камераға тек 1 саусақ не 2 саусақ анық көрсетіңіз.</li>
             <li>2 саусақ танылған соң Жаңыл нарды дою қалпына келеді.</li>
             <li>3 секунд өткенде ғана сүт ағады. 1 саусақта сүт болмайды.</li>
@@ -1544,234 +1623,12 @@
       </aside>
     </section>
 
-    <footer>Локалды жоба: Python MediaPipe + веб-сахна</footer>
+    <footer>Локалды жоба: Frontend MediaPipe JS + веб-сахна</footer>
   </div>
 
   <audio id="audioOne" preload="auto" src="/media/one"></audio>
   <audio id="audioTwo" preload="auto" src="/media/two"></audio>
 
-  <script>
-    const SCENES = {
-      idle: {
-        label: 'Күту режімі',
-        text: 'Камера алдында 1 не 2 саусақ көрсетіңіз. Бір саусақ басқа әуенді, екі саусақ дұрыс күйді іске қосады.'
-      },
-      one: {
-        label: '1 саусақ — бірінші ән',
-        text: 'Бірінші әуен ойнап тұр. Естемес алға шықты, бірақ бұл кезде нар сүт бермейді.'
-      },
-      two_wait: {
-        label: '2 саусақ — дұрыс күй',
-        text: 'Дұрыс күй танылды. Жаңыл нар жанына келді. 3 секундтан кейін ғана сүт шығуы тиіс.'
-      },
-      milk: {
-        label: 'Сүттің ағуы',
-        text: 'Дұрыс күй жүрекке жетті. Жаңыл доып отыр, нар иіп, сүт бере бастады.'
-      }
-    };
-
-    const stage = document.getElementById('stage');
-    const milkFill = document.getElementById('milkFill');
-    const milkingScene = document.getElementById('milkingScene');
-    const charEstemes = document.getElementById('char-estemes');
-    const charOraz = document.getElementById('char-oraz');
-    const charZhanyl = document.getElementById('char-zhanyl');
-
-    const stageStatus = document.getElementById('stageStatus');
-    const gesturePill = document.getElementById('gesturePill');
-    const milkPill = document.getElementById('milkPill');
-    const sceneLabel = document.getElementById('sceneLabel');
-    const sceneText = document.getElementById('sceneText');
-
-    const cameraState = document.getElementById('cameraState');
-    const gestureState = document.getElementById('gestureState');
-    const sceneState = document.getElementById('sceneState');
-    const backendState = document.getElementById('backendState');
-    const trackOneText = document.getElementById('trackOneText');
-    const trackTwoText = document.getElementById('trackTwoText');
-    const countdownBox = document.getElementById('countdownBox');
-    const cardOne = document.getElementById('cardOne');
-    const cardTwo = document.getElementById('cardTwo');
-    const unlockBtn = document.getElementById('unlockBtn');
-
-    const audioOne = document.getElementById('audioOne');
-    const audioTwo = document.getElementById('audioTwo');
-    const tracks = { one: audioOne, two: audioTwo };
-
-    let audioUnlocked = false;
-    let lastEventId = 0;
-    let latestScene = 'idle';
-
-    function createStars() {
-      const stars = document.getElementById('stars');
-      const fragment = document.createDocumentFragment();
-      for (let i = 0; i < 72; i += 1) {
-        const star = document.createElement('span');
-        star.className = 'star';
-        const size = (Math.random() * 2.2 + 1).toFixed(2);
-        star.style.width = size + 'px';
-        star.style.height = size + 'px';
-        star.style.left = (Math.random() * 100).toFixed(2) + '%';
-        star.style.top = (Math.random() * 60).toFixed(2) + '%';
-        star.style.animationDelay = (Math.random() * 3.8).toFixed(2) + 's';
-        fragment.appendChild(star);
-      }
-      stars.appendChild(fragment);
-    }
-
-    async function primeAudio(audio) {
-      audio.muted = true;
-      audio.currentTime = 0;
-      try {
-        await audio.play();
-        audio.pause();
-      } catch (error) {
-        // Audio may still require a stronger user gesture in some browsers.
-      }
-      audio.currentTime = 0;
-      audio.muted = false;
-    }
-
-    async function unlockAudio() {
-      await primeAudio(audioOne);
-      await primeAudio(audioTwo);
-      audioUnlocked = true;
-      unlockBtn.textContent = 'Дыбыс дайын';
-      unlockBtn.classList.add('is-ready');
-      stageStatus.textContent = 'Дыбыс ашылды. Енді камераға 1 немесе 2 саусақ көрсетіңіз.';
-    }
-
-    function stopAllAudio() {
-      Object.values(tracks).forEach((audio) => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
-    }
-
-    async function playTrack(trackKey) {
-      if (!trackKey || !tracks[trackKey]) return;
-
-      stopAllAudio();
-
-      if (!audioUnlocked) {
-        stageStatus.textContent = 'Әуенді автоматты ойнату үшін алдымен “Дыбысты іске қосу” батырмасын басыңыз.';
-        return;
-      }
-
-      try {
-        tracks[trackKey].currentTime = 0;
-        await tracks[trackKey].play();
-      } catch (error) {
-        stageStatus.textContent = 'Браузер әуенді бұғаттады. Дыбысты қайта іске қосып көріңіз.';
-      }
-    }
-
-    function setCharacterState(scene) {
-      [charEstemes, charOraz, charZhanyl].forEach((node) => {
-        node.classList.remove('is-active', 'is-muted', 'is-hidden');
-      });
-
-      if (scene === 'one') {
-        charEstemes.classList.add('is-active');
-        charOraz.classList.add('is-muted');
-        charZhanyl.classList.add('is-muted');
-      } else if (scene === 'two_wait' || scene === 'milk') {
-        charOraz.classList.add('is-active');
-        charEstemes.classList.add('is-muted');
-        charZhanyl.classList.add('is-hidden');
-      }
-    }
-
-    function setMilkingVisual(scene) {
-      const milking = scene === 'two_wait' || scene === 'milk';
-      milkingScene.classList.toggle('is-active', milking);
-
-      if (scene === 'milk') {
-        milkFill.setAttribute('y', '20');
-        milkFill.setAttribute('height', '38');
-      } else {
-        milkFill.setAttribute('y', '58');
-        milkFill.setAttribute('height', '0');
-      }
-    }
-
-    function renderScene(state) {
-      const scene = SCENES[state.scene] ? state.scene : 'idle';
-      latestScene = scene;
-      stage.dataset.scene = scene;
-      sceneLabel.textContent = SCENES[scene].label;
-      sceneText.textContent = SCENES[scene].text;
-      sceneState.textContent = SCENES[scene].label;
-      setCharacterState(scene);
-      setMilkingVisual(scene);
-
-      cardOne.classList.toggle('is-active', state.active_track === 'one');
-      cardTwo.classList.toggle('is-active', state.active_track === 'two');
-
-      milkPill.classList.toggle('is-alert', scene === 'milk');
-      if (scene === 'milk') {
-        milkPill.textContent = 'Нар сүт беріп тұр. Бұл сәт тек дұрыс күйден кейін пайда болады.';
-      } else if (scene === 'two_wait') {
-        milkPill.textContent = `Сүтке дейін уақыт: ${state.milk_countdown.toFixed(1)} с`;
-      } else if (scene === 'one') {
-        milkPill.textContent = '1 саусақта нар сүт бермейді.';
-      } else {
-        milkPill.textContent = 'Сүт тек 2 саусақ пен дұрыс күйде ғана ағады.';
-      }
-    }
-
-    function renderState(state) {
-      cameraState.textContent = state.camera_ready ? 'Камера жұмыс істеп тұр' : 'Камера табылмады';
-      gestureState.textContent = state.gesture_label;
-      backendState.textContent = state.status;
-      stageStatus.textContent = state.status;
-      gesturePill.textContent = 'Белгі: ' + state.gesture_label;
-
-      if (state.milk_countdown > 0) {
-        countdownBox.textContent = `Сүтке дейін: ${state.milk_countdown.toFixed(1)} с`;
-        countdownBox.classList.add('is-live');
-      } else if (state.scene === 'milk') {
-        countdownBox.textContent = 'Сүт ағып тұр';
-        countdownBox.classList.add('is-live');
-      } else {
-        countdownBox.textContent = 'Сүтке дейін: —';
-        countdownBox.classList.remove('is-live');
-      }
-
-      const trackOneMeta = state.tracks.one;
-      const trackTwoMeta = state.tracks.two;
-      trackOneText.textContent = trackOneMeta.available
-        ? `${trackOneMeta.title}. Бұл кезде нар сүт бермейді.`
-        : `${trackOneMeta.title}. Файл табылмады.`
-      trackTwoText.textContent = trackTwoMeta.available
-        ? `${trackTwoMeta.title}. 3 секундтан кейін ғана сүт ағады.`
-        : `${trackTwoMeta.title}. Файл табылмады.`
-
-      renderScene(state);
-    }
-
-    async function sync() {
-      try {
-        const response = await fetch('/api/state', { cache: 'no-store' });
-        const state = await response.json();
-        renderState(state);
-
-        if (state.event_id !== lastEventId) {
-          lastEventId = state.event_id;
-          await playTrack(state.active_track);
-        }
-      } catch (error) {
-        cameraState.textContent = 'Байланыс жоқ';
-        backendState.textContent = 'Python серверімен байланыс үзілді.';
-        stageStatus.textContent = 'Серверге қосылу мүмкін болмады.';
-      }
-    }
-
-    unlockBtn.addEventListener('click', unlockAudio);
-
-    createStars();
-    sync();
-    setInterval(sync, 250);
-  </script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>
