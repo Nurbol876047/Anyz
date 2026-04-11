@@ -153,7 +153,7 @@ async function playTrack(trackKey) {
   stopAllAudio();
 
   if (!audioUnlocked) {
-    state.status = 'Әуенді автоматты ойнату үшін алдымен “Дыбысты іске қосу” батырмасын басыңыз.';
+    state.status = 'Әуенді автоматты ойнату үшін алдымен "Дыбысты іске қосу" батырмасын басыңыз.';
     renderState();
     return;
   }
@@ -290,6 +290,12 @@ function clearCanvas() {
 function drawResults(result) {
   resizeCameraCanvas();
   clearCanvas();
+
+  // ✅ Рисуем видео с камеры на canvas (чтобы было видно лицо)
+  cameraContext.save();
+  cameraContext.scale(-1, 1);
+  cameraContext.drawImage(cameraVideo, -cameraCanvas.width, 0, cameraCanvas.width, cameraCanvas.height);
+  cameraContext.restore();
 
   if (!result.landmarks.length) return;
 
