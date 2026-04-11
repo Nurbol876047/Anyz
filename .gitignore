@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+models/
+preview.png
+preview_updated.png
+preview_camera.png
+*.pyc

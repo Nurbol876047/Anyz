@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Күй аңызы — MediaPipe басқаруы</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Marcellus&display=swap');
+
+    :root {
+      --bg: #110907;
+      --ink: #f2e2bf;
+      --muted: #d1b17b;
+      --gold: #efbf68;
+      --gold-deep: #b87427;
+      --line: rgba(236, 191, 104, 0.16);
+      --panel: rgba(24, 12, 8, 0.78);
+      --shadow: 0 28px 55px rgba(0, 0, 0, 0.35);
+      --scene-top: #233c58;
+      --scene-mid: #9b5829;
+      --scene-bottom: #e3ae69;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(233, 153, 72, 0.15), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(62, 84, 126, 0.18), transparent 32%),
+        linear-gradient(180deg, #160c08 0%, #090403 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0 3px,
+          rgba(255, 255, 255, 0.35) 3px 4px
+        );
+      mix-blend-mode: soft-light;
+    }
+
+    .page {
+      width: min(1440px, calc(100% - 26px));
+      margin: 0 auto;
+      padding: 26px 0 22px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 8px 8px 22px;
+    }
+
+    .hero__eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hero h1 {
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+      font-size: clamp(2.2rem, 4.6vw, 4.25rem);
+      line-height: 1.05;
+      margin-top: 14px;
+      color: #fae8b9;
+      text-shadow: 0 0 28px rgba(240, 190, 93, 0.15);
+    }
+
+    .hero p {
+      max-width: 900px;
+      margin: 12px auto 0;
+      color: #e3cb98;
+      font-size: clamp(1.05rem, 1.8vw, 1.24rem);
+      line-height: 1.46;
+    }
+
+    .hero strong {
+      color: #ffe7ab;
+      font-weight: 600;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.38fr) minmax(360px, 0.88fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .shell {
+      border-radius: 28px;
+      border: 1px solid rgba(236, 191, 104, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+        rgba(16, 8, 5, 0.76);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .stage-shell {
+      padding: 14px;
+    }
+
+    #stage {
+      position: relative;
+      min-height: 760px;
+      overflow: hidden;
+      border-radius: 22px;
+      background: linear-gradient(180deg, var(--scene-top) 0%, var(--scene-mid) 58%, var(--scene-bottom) 100%);
+      box-shadow:
+        inset 0 -50px 90px rgba(0, 0, 0, 0.32),
+        inset 0 24px 60px rgba(255, 204, 120, 0.08);
+      transition: background 1s ease, box-shadow 1s ease;
+      isolation: isolate;
+    }
+
+    #stage::before,
+    #stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #stage::before {
+      background:
+        radial-gradient(circle at 50% 112%, rgba(0, 0, 0, 0.56), transparent 46%),
+        radial-gradient(circle at 22% 11%, rgba(255, 197, 108, 0.12), transparent 24%);
+      z-index: 1;
+    }
+
+    #stage::after {
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 34px,
+          rgba(255, 255, 255, 0.018) 34px 35px
+        );
+      opacity: 0.1;
+      mix-blend-mode: screen;
+      z-index: 2;
+    }
+
+    #stage[data-scene="idle"] {
+      --scene-top: #24415e;
+      --scene-mid: #a05b2b;
+      --scene-bottom: #efba72;
+    }
+
+    #stage[data-scene="one"],
+    #stage[data-scene="two_wait"] {
+      --scene-top: #071322;
+      --scene-mid: #17304d;
+      --scene-bottom: #4a2a18;
+      box-shadow:
+        inset 0 -50px 90px rgba(0, 0, 0, 0.5),
+        inset 0 24px 60px rgba(110, 154, 220, 0.05);
+    }
+
+    #stage[data-scene="milk"] {
+      --scene-top: #071322;
+      --scene-mid: #17304d;
+      --scene-bottom: #4f2b16;
+      box-shadow:
+        inset 0 -50px 90px rgba(0, 0, 0, 0.5),
+        inset 0 24px 60px rgba(110, 154, 220, 0.05),
+        0 0 50px rgba(116, 255, 196, 0.08);
+    }
+
+    .sky,
+    .mountains {
+      position: absolute;
+      inset: 0;
+    }
+
+    .sun,
+    .moon {
+      position: absolute;
+      border-radius: 50%;
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .sun {
+      width: 138px;
+      height: 138px;
+      top: 76px;
+      right: 132px;
+      background:
+        radial-gradient(circle, rgba(255, 234, 175, 0.98) 0 24%, rgba(255, 186, 92, 0.88) 36%, rgba(255, 186, 92, 0.12) 71%, transparent 73%);
+      box-shadow: 0 0 80px rgba(255, 176, 86, 0.22);
+    }
+
+    .moon {
+      width: 92px;
+      height: 92px;
+      top: 66px;
+      right: 132px;
+      opacity: 0;
+      transform: translateY(18px);
+      background:
+        radial-gradient(circle at 35% 28%, #fff6d8 0 24%, #e7dab2 38%, rgba(231, 218, 178, 0.22) 63%, transparent 73%);
+      box-shadow: 0 0 34px rgba(214, 228, 255, 0.18);
+    }
+
+    #stage[data-scene="idle"] .sun {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #stage[data-scene="one"] .sun,
+    #stage[data-scene="two_wait"] .sun,
+    #stage[data-scene="milk"] .sun {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+
+    #stage[data-scene="one"] .moon,
+    #stage[data-scene="two_wait"] .moon,
+    #stage[data-scene="milk"] .moon {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    #stage[data-scene="one"] .stars,
+    #stage[data-scene="two_wait"] .stars,
+    #stage[data-scene="milk"] .stars {
+      opacity: 1;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.45);
+      animation: twinkle 3.5s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(0.78); }
+      45% { opacity: 1; transform: scale(1.14); }
+    }
+
+    .cloud {
+      position: absolute;
+      width: 220px;
+      height: 78px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 226, 184, 0.24), rgba(255, 226, 184, 0.03) 72%, transparent 74%);
+      filter: blur(12px);
+      animation: drift 24s linear infinite;
+      opacity: 0.65;
+    }
+
+    .cloud--one { top: 72px; left: -28px; }
+    .cloud--two { top: 148px; right: 252px; animation-duration: 30s; animation-delay: -9s; }
+    .cloud--three { top: 198px; right: -12px; width: 250px; animation-duration: 28s; animation-delay: -16s; }
+
+    #stage[data-scene="one"] .cloud,
+    #stage[data-scene="two_wait"] .cloud,
+    #stage[data-scene="milk"] .cloud {
+      opacity: 0.12;
+    }
+
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(130px); }
+    }
+
+    .range,
+    .dune {
+      position: absolute;
+      left: -6%;
+      width: 112%;
+      border-radius: 50%;
+    }
+
+    .range--back {
+      bottom: 258px;
+      height: 200px;
+      background: linear-gradient(180deg, rgba(42, 63, 95, 0.42), rgba(41, 29, 21, 0.84));
+      clip-path: polygon(0% 70%, 6% 58%, 13% 63%, 20% 46%, 28% 60%, 35% 32%, 44% 56%, 52% 28%, 61% 53%, 70% 34%, 79% 56%, 88% 39%, 100% 65%, 100% 100%, 0 100%);
+    }
+
+    .range--mid {
+      bottom: 186px;
+      height: 220px;
+      background: linear-gradient(180deg, rgba(82, 62, 43, 0.48), rgba(30, 18, 12, 0.94));
+      clip-path: polygon(0% 78%, 7% 66%, 14% 72%, 23% 48%, 32% 67%, 41% 41%, 50% 60%, 60% 37%, 69% 58%, 80% 32%, 90% 55%, 100% 45%, 100% 100%, 0% 100%);
+    }
+
+    .dune--far {
+      bottom: 144px;
+      height: 184px;
+      background: linear-gradient(180deg, rgba(134, 94, 50, 0.56), rgba(74, 44, 23, 0.95));
+      clip-path: polygon(0% 68%, 8% 64%, 16% 70%, 28% 62%, 37% 66%, 46% 58%, 56% 65%, 67% 59%, 76% 62%, 87% 55%, 100% 63%, 100% 100%, 0 100%);
+    }
+
+    .dune--front {
+      bottom: -34px;
+      height: 272px;
+      background:
+        linear-gradient(180deg, rgba(171, 117, 61, 0.95) 0%, rgba(110, 72, 38, 0.98) 42%, rgba(46, 28, 17, 1) 100%);
+      clip-path: polygon(0% 46%, 9% 40%, 18% 44%, 30% 36%, 40% 47%, 50% 32%, 63% 45%, 74% 39%, 85% 48%, 100% 36%, 100% 100%, 0 100%);
+    }
+
+    .grass-lines {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 58px;
+      height: 128px;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 50px,
+          rgba(255, 255, 255, 0.03) 50px 51px
+        ),
+        linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.22));
+      z-index: 2;
+    }
+
+    .wind {
+      position: absolute;
+      width: 240px;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(255, 220, 152, 0.42), transparent);
+      opacity: 0.28;
+      animation: wind 7s linear infinite;
+      z-index: 2;
+    }
+
+    .wind--1 { bottom: 270px; left: 12%; animation-delay: -2.2s; }
+    .wind--2 { bottom: 242px; left: 36%; width: 190px; animation-delay: -4s; }
+    .wind--3 { bottom: 214px; left: 56%; width: 250px; animation-delay: -0.8s; }
+
+    @keyframes wind {
+      from { transform: translateX(-28px); opacity: 0; }
+      20% { opacity: 0.35; }
+      80% { opacity: 0.18; }
+      to { transform: translateX(42px); opacity: 0; }
+    }
+
+    .yurt {
+      position: absolute;
+      right: 62px;
+      bottom: 202px;
+      width: 254px;
+      z-index: 4;
+      filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.34));
+    }
+
+    .smoke {
+      position: absolute;
+      right: 182px;
+      bottom: 344px;
+      width: 120px;
+      height: 160px;
+      z-index: 3;
+      opacity: 0.7;
+    }
+
+    .smoke span {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 242, 220, 0.28), rgba(255, 242, 220, 0.02) 70%, transparent 72%);
+      animation: smoke 6.5s ease-in infinite;
+    }
+
+    .smoke span:nth-child(1) { width: 38px; height: 38px; margin-left: -18px; animation-delay: 0s; }
+    .smoke span:nth-child(2) { width: 54px; height: 54px; margin-left: -8px; animation-delay: 1.8s; }
+    .smoke span:nth-child(3) { width: 46px; height: 46px; margin-left: -28px; animation-delay: 3.2s; }
+
+    @keyframes smoke {
+      0% { transform: translate(-50%, 0) scale(0.4); opacity: 0; }
+      18% { opacity: 0.5; }
+      100% { transform: translate(-40%, -116px) scale(1.7); opacity: 0; }
+    }
+
+    .fire {
+      position: absolute;
+      right: 266px;
+      bottom: 216px;
+      width: 36px;
+      height: 54px;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.45s ease;
+      filter: drop-shadow(0 0 16px rgba(255, 140, 64, 0.35));
+    }
+
+    #stage[data-scene="one"] .fire,
+    #stage[data-scene="two_wait"] .fire,
+    #stage[data-scene="milk"] .fire {
+      opacity: 1;
+    }
+
+    .fire span {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      border-radius: 50% 50% 42% 42%;
+      transform-origin: center bottom;
+      animation: flame 1.1s ease-in-out infinite alternate;
+    }
+
+    .fire span:nth-child(1) {
+      width: 24px;
+      height: 42px;
+      margin-left: -12px;
+      background: radial-gradient(circle at 50% 30%, #fff4c7 0 14%, #ffb35a 34%, #ff7031 68%, transparent 70%);
+    }
+
+    .fire span:nth-child(2) {
+      width: 18px;
+      height: 34px;
+      margin-left: -3px;
+      background: radial-gradient(circle at 50% 20%, #fff8e4 0 16%, #ffc96b 38%, #ff9046 75%, transparent 77%);
+      animation-delay: -0.4s;
+    }
+
+    .fire span:nth-child(3) {
+      width: 16px;
+      height: 28px;
+      margin-left: -17px;
+      background: radial-gradient(circle at 55% 18%, #ffe8bd 0 15%, #ffb258 40%, #f96b33 76%, transparent 78%);
+      animation-delay: -0.7s;
+    }
+
+    @keyframes flame {
+      from { transform: translateY(1px) scaleY(0.96) rotate(-4deg); }
+      to { transform: translateY(-2px) scaleY(1.08) rotate(4deg); }
+    }
+
+    .camel {
+      position: absolute;
+      left: 46px;
+      bottom: 150px;
+      width: 372px;
+      z-index: 6;
+      transform-origin: 50% 100%;
+      animation: camel-breathe 4.3s ease-in-out infinite;
+      transition: filter 0.45s ease, transform 0.45s ease;
+      filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.28));
+    }
+
+    @keyframes camel-breathe {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(2px) scaleY(0.992); }
+    }
+
+    #stage[data-scene="one"] .camel {
+      filter: drop-shadow(0 0 14px rgba(232, 194, 127, 0.12));
+    }
+
+    #stage[data-scene="milk"] .camel {
+      filter: drop-shadow(0 0 16px rgba(148, 255, 198, 0.16));
+    }
+
+    .camel .camel-eye-line {
+      opacity: 0;
+    }
+
+    #stage[data-scene="one"] .camel .camel-eye-line {
+      opacity: 1;
+    }
+
+    #stage[data-scene="milk"] .camel .camel-udder {
+      fill: #dc9a80;
+      filter: drop-shadow(0 0 8px rgba(255, 235, 205, 0.22));
+    }
+
+    .bucket {
+      position: absolute;
+      left: 250px;
+      bottom: 184px;
+      width: 54px;
+      z-index: 9;
+      filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.28));
+    }
+
+    .milk-stream {
+      position: absolute;
+      left: 268px;
+      bottom: 220px;
+      width: 12px;
+      height: 0;
+      opacity: 0;
+      z-index: 9;
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(252, 244, 228, 0.98) 72%, rgba(255, 250, 242, 0.85));
+      box-shadow: 0 0 16px rgba(255, 247, 225, 0.22);
+      transition: height 0.8s ease, opacity 0.4s ease;
+    }
+
+    #stage[data-scene="milk"] .milk-stream {
+      height: 98px;
+      opacity: 1;
+      animation: milk-pulse 0.7s ease-in-out infinite alternate;
+    }
+
+    .milk-stream::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      width: 10px;
+      height: 10px;
+      margin-left: -5px;
+      border-radius: 50%;
+      background: rgba(252, 244, 228, 0.9);
+      box-shadow: 0 0 12px rgba(255, 247, 225, 0.28);
+    }
+
+    @keyframes milk-pulse {
+      from { width: 10px; transform: translateY(0); }
+      to { width: 13px; transform: translateY(1px); }
+    }
+
+    .character {
+      position: absolute;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transform-origin: 50% 100%;
+      transition: transform 0.45s ease, filter 0.45s ease, opacity 0.45s ease;
+    }
+
+    .character__portrait {
+      position: relative;
+      width: 140px;
+      filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.28));
+    }
+
+    .character__portrait svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .character__aura {
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+    }
+
+    .character__label {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(240, 191, 93, 0.18);
+      background: rgba(16, 8, 5, 0.44);
+      color: #f4dba5;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .character__equalizer {
+      position: absolute;
+      left: 50%;
+      bottom: 36px;
+      width: 44px;
+      height: 30px;
+      margin-left: 22px;
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .character__equalizer span {
+      width: 5px;
+      border-radius: 999px 999px 2px 2px;
+      background: linear-gradient(180deg, rgba(255, 237, 200, 0.95), rgba(242, 163, 67, 0.4));
+      height: 10px;
+      animation: eq 0.8s ease-in-out infinite alternate;
+    }
+
+    .character__equalizer span:nth-child(2) { animation-delay: -0.18s; }
+    .character__equalizer span:nth-child(3) { animation-delay: -0.34s; }
+    .character__equalizer span:nth-child(4) { animation-delay: -0.52s; }
+
+    @keyframes eq {
+      from { height: 7px; opacity: 0.58; }
+      to { height: 26px; opacity: 1; }
+    }
+
+    .character.is-active {
+      transform: translateY(-6px) scale(1.02);
+    }
+
+    .character.is-active .character__aura {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    .character.is-active .character__equalizer {
+      opacity: 1;
+    }
+
+    .character.is-muted {
+      opacity: 0.56;
+      filter: grayscale(0.16);
+    }
+
+    .character--estemes {
+      left: 296px;
+      bottom: 148px;
+    }
+
+    .character--estemes .character__aura {
+      background: radial-gradient(circle, rgba(255, 214, 136, 0.3), transparent 70%);
+    }
+
+    .character--oraz {
+      left: 478px;
+      bottom: 148px;
+    }
+
+    .character--oraz .character__aura {
+      background: radial-gradient(circle, rgba(145, 255, 200, 0.24), transparent 70%);
+    }
+
+    .character--zhanyl {
+      right: 162px;
+      bottom: 168px;
+      animation: zhanyl-breath 3.8s ease-in-out infinite;
+    }
+
+    .character--zhanyl .character__portrait {
+      width: 126px;
+    }
+
+    .character--zhanyl.is-hidden {
+      animation: none;
+      opacity: 0;
+      transform: translateX(-30px) translateY(10px) scale(0.88);
+      pointer-events: none;
+    }
+
+    @keyframes zhanyl-breath {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+
+    .milking-scene {
+      position: absolute;
+      left: 166px;
+      bottom: 154px;
+      width: 162px;
+      z-index: 8;
+      opacity: 0;
+      transform: translateX(28px) translateY(8px) scale(0.92);
+      pointer-events: none;
+      transition: opacity 0.55s ease, transform 0.65s ease;
+      filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.22));
+    }
+
+    .milking-scene.is-active {
+      opacity: 1;
+      transform: translateX(0) translateY(0) scale(1);
+    }
+
+    .milking-scene svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+
+    .milking-scene.is-active .milking-body {
+      animation: milk-rock 1.4s ease-in-out infinite;
+      transform-origin: 92px 120px;
+    }
+
+    .milking-scene.is-active .milker-arm {
+      animation: milk-hand 0.8s ease-in-out infinite alternate;
+      transform-origin: 110px 104px;
+    }
+
+    .milking-scene.is-active .milker-arm-back {
+      animation: milk-hand 0.8s ease-in-out infinite alternate-reverse;
+      transform-origin: 93px 103px;
+    }
+
+    @keyframes milk-rock {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(1px) rotate(-1.2deg); }
+    }
+
+    @keyframes milk-hand {
+      from { transform: rotate(-6deg) translateY(0); }
+      to { transform: rotate(9deg) translateY(3px); }
+    }
+
+    .stage-status,
+    .gesture-pill,
+    .milk-pill {
+      position: absolute;
+      z-index: 12;
+      border-radius: 18px;
+      background: rgba(15, 9, 7, 0.48);
+      border: 1px solid rgba(239, 191, 104, 0.14);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 12px 18px rgba(0, 0, 0, 0.16);
+    }
+
+    .stage-status {
+      top: 16px;
+      left: 16px;
+      max-width: min(54%, 430px);
+      padding: 12px 16px;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      color: #f7e7bf;
+    }
+
+    .gesture-pill {
+      top: 16px;
+      right: 16px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      color: #f7e7bf;
+      min-width: 220px;
+      text-align: right;
+    }
+
+    .milk-pill {
+      top: 88px;
+      right: 16px;
+      min-width: 250px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      color: #e6cfa0;
+      text-align: right;
+    }
+
+    .milk-pill.is-alert {
+      color: #cbffd7;
+      border-color: rgba(116, 242, 171, 0.22);
+      box-shadow: 0 10px 22px rgba(62, 150, 101, 0.18);
+    }
+
+    .caption {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 12;
+      padding: 104px 24px 22px;
+      background: linear-gradient(180deg, rgba(8, 5, 3, 0) 0%, rgba(8, 5, 3, 0.88) 100%);
+    }
+
+    .caption__label {
+      font-size: 0.92rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #efc36d;
+    }
+
+    .caption__text {
+      max-width: 760px;
+      margin-top: 10px;
+      font-size: clamp(1.15rem, 2vw, 1.48rem);
+      line-height: 1.3;
+      color: #fff0c8;
+    }
+
+    .camera-shell {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+      align-self: stretch;
+    }
+
+    .camera-head h2 {
+      font-family: 'Marcellus', serif;
+      font-size: 1.66rem;
+      font-weight: 400;
+      color: #ffe2a6;
+    }
+
+    .camera-head p {
+      margin-top: 8px;
+      color: #dfc393;
+      line-height: 1.4;
+      font-size: 1.06rem;
+    }
+
+    .unlock-btn {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #f0c271, #c57d34);
+      color: #160d07;
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+      box-shadow: 0 14px 22px rgba(191, 124, 43, 0.22);
+    }
+
+    .unlock-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .unlock-btn.is-ready {
+      background: linear-gradient(135deg, #bdf5d5, #66bc8c);
+      color: #123122;
+    }
+
+    .camera-frame {
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(236, 191, 104, 0.12);
+      background: rgba(9, 5, 4, 0.74);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .camera-frame img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #120908;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(236, 191, 104, 0.1);
+      display: grid;
+      gap: 6px;
+    }
+
+    .metric span {
+      color: #c9a973;
+      font-size: 0.92rem;
+      letter-spacing: 0.04em;
+    }
+
+    .metric strong {
+      color: #fbe8bc;
+      font-size: 1.08rem;
+      line-height: 1.22;
+      font-weight: 600;
+    }
+
+    .gesture-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .gesture-card {
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(236, 191, 104, 0.1);
+      display: grid;
+      grid-template-columns: 60px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .gesture-card.is-active {
+      transform: translateY(-2px);
+      border-color: rgba(236, 191, 104, 0.24);
+      box-shadow: 0 12px 24px rgba(176, 109, 40, 0.18);
+    }
+
+    .gesture-card--two.is-active {
+      border-color: rgba(116, 242, 171, 0.26);
+      box-shadow: 0 12px 24px rgba(63, 150, 102, 0.16);
+    }
+
+    .gesture-num {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1d100a;
+      background: linear-gradient(135deg, #f0c271, #c57d34);
+      box-shadow: 0 10px 18px rgba(191, 124, 43, 0.18);
+    }
+
+    .gesture-card--two .gesture-num {
+      background: linear-gradient(135deg, #bcf5d3, #67bd8d);
+      color: #143525;
+      box-shadow: 0 10px 18px rgba(78, 163, 115, 0.16);
+    }
+
+    .gesture-card h3 {
+      color: #ffe0a6;
+      font-size: 1.12rem;
+      font-weight: 600;
+    }
+
+    .gesture-card p {
+      margin-top: 4px;
+      color: #ddc393;
+      line-height: 1.36;
+      font-size: 1rem;
+    }
+
+    .countdown-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed rgba(236, 191, 104, 0.16);
+      color: #f9e7bb;
+      font-size: 1.08rem;
+      line-height: 1.3;
+    }
+
+    .countdown-box.is-live {
+      color: #cbffd7;
+      border-color: rgba(116, 242, 171, 0.24);
+    }
+
+    .helper-list {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(236, 191, 104, 0.1);
+    }
+
+    .helper-list h3 {
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+      color: #ffe2a6;
+      font-size: 1.28rem;
+    }
+
+    .helper-list ul {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      color: #dfc393;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .helper-list li::before {
+      content: "•";
+      color: #efc36d;
+      margin-right: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 18px 12px 2px;
+      color: #9f8158;
+      font-size: 0.98rem;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 1200px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      #stage {
+        min-height: 680px;
+      }
+
+      .camera-shell {
+        max-width: 920px;
+        margin: 0 auto;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: min(100%, calc(100% - 16px));
+      }
+
+      #stage {
+        min-height: 560px;
+      }
+
+      .stage-status,
+      .gesture-pill,
+      .milk-pill {
+        font-size: 0.94rem;
+      }
+
+      .milk-pill {
+        top: auto;
+        bottom: 118px;
+        left: 14px;
+        right: 14px;
+        text-align: left;
+      }
+
+      .gesture-pill {
+        right: 14px;
+      }
+
+      .camel {
+        left: 8px;
+        width: 270px;
+        bottom: 142px;
+      }
+
+      .bucket {
+        left: 168px;
+        bottom: 172px;
+        width: 42px;
+      }
+
+      .milk-stream {
+        left: 182px;
+        bottom: 203px;
+        width: 8px;
+      }
+
+      .character__portrait {
+        width: 100px;
+      }
+
+      .character--estemes {
+        left: 208px;
+        bottom: 138px;
+      }
+
+      .character--oraz {
+        left: 332px;
+        bottom: 138px;
+      }
+
+      .character--zhanyl {
+        right: 84px;
+        bottom: 154px;
+      }
+
+      .character--zhanyl .character__portrait {
+        width: 94px;
+      }
+
+      .milking-scene {
+        left: 120px;
+        bottom: 144px;
+        width: 116px;
+      }
+
+      .yurt {
+        right: 18px;
+        bottom: 190px;
+        width: 170px;
+      }
+
+      .smoke {
+        right: 74px;
+        bottom: 292px;
+      }
+
+      .fire {
+        right: 162px;
+        bottom: 204px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero p {
+        font-size: 1rem;
+      }
+
+      .stage-shell,
+      .camera-shell {
+        padding: 10px;
+      }
+
+      #stage {
+        min-height: 500px;
+      }
+
+      .stage-status {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+      }
+
+      .gesture-pill {
+        top: 82px;
+        left: 10px;
+        right: 10px;
+        text-align: left;
+      }
+
+      .caption {
+        padding: 142px 16px 16px;
+      }
+
+      .caption__text {
+        font-size: 1rem;
+      }
+
+      .camel {
+        width: 215px;
+        bottom: 128px;
+      }
+
+      .bucket {
+        left: 128px;
+        bottom: 156px;
+        width: 34px;
+      }
+
+      .milk-stream {
+        left: 140px;
+        bottom: 184px;
+      }
+
+      .character__portrait {
+        width: 86px;
+      }
+
+      .character--estemes {
+        left: 164px;
+        bottom: 124px;
+      }
+
+      .character--oraz {
+        left: 252px;
+        bottom: 124px;
+      }
+
+      .character--zhanyl {
+        right: 56px;
+        bottom: 136px;
+      }
+
+      .character--zhanyl .character__portrait {
+        width: 80px;
+      }
+
+      .milking-scene {
+        left: 90px;
+        bottom: 132px;
+        width: 92px;
+      }
+
+      .yurt {
+        width: 148px;
+        right: 8px;
+      }
+
+      .scene-status,
+      .gesture-pill,
+      .milk-pill {
+        font-size: 0.88rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero__eyebrow">Python + MediaPipe басқаруы</div>
+      <h1>Күй аңызы</h1>
+      <p>
+        Төмендегі батырмалар алынып тасталды. Енді көрініс
+        <strong>қол саусақтарымен</strong> басқарылады:
+        <strong>1 саусақ</strong> — бірінші ән, <strong>2 саусақ</strong> — дұрыс күй.
+        Дұрыс күйден кейін <strong>3 секунд</strong> өткенде ғана нар сүт береді.
+      </p>
+    </header>
+
+    <section class="workspace">
+      <section class="stage-shell shell">
+        <div id="stage" data-scene="idle">
+          <div class="sky">
+            <div class="sun"></div>
+            <div class="moon"></div>
+            <div id="stars" class="stars"></div>
+            <div class="cloud cloud--one"></div>
+            <div class="cloud cloud--two"></div>
+            <div class="cloud cloud--three"></div>
+          </div>
+
+          <div class="mountains">
+            <div class="range range--back"></div>
+            <div class="range range--mid"></div>
+            <div class="dune dune--far"></div>
+            <div class="dune dune--front"></div>
+            <div class="grass-lines"></div>
+            <div class="wind wind--1"></div>
+            <div class="wind wind--2"></div>
+            <div class="wind wind--3"></div>
+          </div>
+
+          <div class="yurt">
+            <svg viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="yurtBody" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#b58958"/>
+                  <stop offset="55%" stop-color="#8c6339"/>
+                  <stop offset="100%" stop-color="#56381f"/>
+                </linearGradient>
+                <linearGradient id="door" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#3c2818"/>
+                  <stop offset="100%" stop-color="#16100c"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="130" cy="120" rx="112" ry="50" fill="#382417" opacity="0.28"/>
+              <ellipse cx="130" cy="98" rx="112" ry="60" fill="url(#yurtBody)"/>
+              <ellipse cx="130" cy="94" rx="112" ry="56" fill="#c29c68" opacity="0.34"/>
+              <ellipse cx="130" cy="33" rx="34" ry="15" fill="#6b441d"/>
+              <ellipse cx="130" cy="33" rx="22" ry="9" fill="#29170d"/>
+              <path d="M18 97 Q130 18 242 97" stroke="#5d3d1f" stroke-width="4" fill="none" opacity="0.7"/>
+              <g stroke="#6c4924" stroke-width="2" opacity="0.7">
+                <line x1="34" y1="98" x2="105" y2="34"/>
+                <line x1="58" y1="98" x2="117" y2="34"/>
+                <line x1="82" y1="98" x2="126" y2="34"/>
+                <line x1="106" y1="98" x2="134" y2="34"/>
+                <line x1="226" y1="98" x2="155" y2="34"/>
+                <line x1="202" y1="98" x2="143" y2="34"/>
+                <line x1="178" y1="98" x2="134" y2="34"/>
+                <line x1="154" y1="98" x2="126" y2="34"/>
+              </g>
+              <rect x="19" y="95" width="222" height="12" rx="6" fill="#7b5227"/>
+              <rect x="99" y="104" width="62" height="58" rx="6" fill="url(#door)"/>
+              <rect x="107" y="112" width="46" height="44" rx="4" fill="#0f0907"/>
+              <path d="M100 104 Q130 84 160 104" stroke="#e1b14e" stroke-width="3" fill="none" opacity="0.78"/>
+              <path d="M85 123 Q130 111 175 123" stroke="#e1b14e" stroke-width="2" fill="none" opacity="0.52"/>
+            </svg>
+          </div>
+
+          <div class="smoke" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="fire" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="camel">
+            <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="camelBody" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#d6a476"/>
+                  <stop offset="100%" stop-color="#9f683f"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="178" cy="176" rx="138" ry="24" fill="#2d190f" opacity="0.22"/>
+              <path d="M52 147 Q56 111 88 105 L116 104 Q140 67 174 69 Q206 72 219 99 Q232 67 266 71 Q301 76 309 108 L325 110 Q344 112 346 133 L346 151 Q345 167 327 170 L92 170 Q60 170 54 157 Q51 151 52 147Z" fill="url(#camelBody)"/>
+              <path d="M72 129 Q104 114 151 118 Q202 122 240 120 Q286 118 319 129" stroke="#8c5c35" stroke-width="7" opacity="0.34" fill="none" stroke-linecap="round"/>
+              <path d="M98 108 Q116 88 138 82 Q154 78 173 80 Q155 64 168 58 Q135 61 116 102Z" fill="#c79160" opacity="0.64"/>
+              <path d="M218 98 Q229 82 243 76 Q258 70 275 74 Q259 60 265 58 Q233 62 218 94Z" fill="#c38a57" opacity="0.58"/>
+              <path d="M255 103 Q271 78 282 42 Q288 22 311 18 Q331 17 341 28 Q351 41 347 57 Q344 69 347 84 Q351 103 339 112 Q331 118 309 117 L283 116 Q268 115 255 103Z" fill="url(#camelBody)"/>
+              <path d="M290 87 Q309 76 331 82" stroke="#8f5d36" stroke-width="5" opacity="0.3" fill="none" stroke-linecap="round"/>
+              <ellipse cx="174" cy="100" rx="32" ry="29" fill="#b87f4f"/>
+              <ellipse cx="256" cy="101" rx="31" ry="28" fill="#bf8757"/>
+              <ellipse cx="318" cy="45" rx="28" ry="22" fill="#d2a06f"/>
+              <path d="M335 56 Q342 58 344 61" stroke="#9b6037" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="331" cy="42" r="4.1" fill="#23140c"/>
+              <circle cx="332.5" cy="40.5" r="1.1" fill="#fff"/>
+              <line class="camel-eye-line" x1="325" y1="42" x2="336" y2="48" stroke="#1d110b" stroke-width="2.3"/>
+              <ellipse cx="301" cy="31" rx="8" ry="11" fill="#af7447"/>
+              <ellipse cx="342" cy="51" rx="6" ry="4" fill="#a56639"/>
+              <path d="M321 54 Q329 57 338 55" stroke="#7a4725" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M111 169 Q122 194 114 210" stroke="#9b653b" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path d="M150 170 Q160 196 151 210" stroke="#a66e41" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path d="M230 170 Q239 196 230 210" stroke="#a66e41" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path d="M272 169 Q283 194 275 210" stroke="#9b653b" stroke-width="15" fill="none" stroke-linecap="round"/>
+              <path d="M112 205 Q113 212 103 213" stroke="#724523" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M151 205 Q152 212 142 213" stroke="#724523" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M230 205 Q231 212 221 213" stroke="#724523" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M275 205 Q276 212 266 213" stroke="#724523" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M48 145 Q25 138 26 156 Q28 173 42 170" stroke="#9a6236" stroke-width="7" fill="none" stroke-linecap="round"/>
+              <path d="M144 160 Q191 170 244 159" stroke="#88532f" stroke-width="5" fill="none" opacity="0.4" stroke-linecap="round"/>
+              <path class="camel-udder" d="M220 159 Q217 171 225 177 Q236 182 247 177 Q255 171 252 159 Q248 152 237 151 Q225 151 220 159Z" fill="#ca8c72"/>
+              <rect x="228" y="175" width="5" height="11" rx="2.5" fill="#b87159"/>
+              <rect x="241" y="175" width="5" height="11" rx="2.5" fill="#b87159"/>
+            </svg>
+          </div>
+
+          <div class="bucket">
+            <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <clipPath id="bucketClip">
+                  <path d="M8 12 L4 58 L46 58 L42 12 Z"/>
+                </clipPath>
+              </defs>
+              <path d="M8 12 L4 58 L46 58 L42 12 Z" fill="#6f5337" stroke="#49311f" stroke-width="2"/>
+              <path d="M13 13 Q25 1 37 13" stroke="#49311f" stroke-width="3" fill="none"/>
+              <rect x="4" y="10" width="42" height="6" rx="3" fill="#503520"/>
+              <rect id="milkFill" x="4" y="58" width="42" height="0" fill="#f9f3e6" clip-path="url(#bucketClip)"/>
+            </svg>
+          </div>
+
+          <div class="milk-stream"></div>
+
+          <div id="char-estemes" class="character character--estemes">
+            <div class="character__portrait">
+              <div class="character__aura"></div>
+              <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <ellipse cx="78" cy="222" rx="37" ry="10" fill="#28170f" opacity="0.22"/>
+                <path d="M60 88 Q65 74 80 74 Q95 74 100 88 L103 102 Q87 108 69 108 Z" fill="#c99566"/>
+                <path d="M46 98 Q56 84 80 84 Q104 84 115 100 L123 196 Q101 215 79 216 Q57 215 35 196 Z" fill="#5b3b22"/>
+                <path d="M49 112 Q38 134 34 162 Q35 173 49 169 L59 132 Z" fill="#50341e"/>
+                <path d="M111 112 Q123 134 127 164 Q126 173 113 170 L100 132 Z" fill="#4a301c"/>
+                <ellipse cx="80" cy="50" rx="25" ry="28" fill="#cb986c"/>
+                <path d="M58 47 Q80 31 102 47 L99 68 Q80 60 61 68 Z" fill="#a48c7b" opacity="0.18"/>
+                <path d="M53 27 Q80 6 107 27 L104 37 Q80 28 56 37 Z" fill="#261812"/>
+                <rect x="49" y="19" width="62" height="20" rx="6" fill="#38271b"/>
+                <ellipse cx="80" cy="18" rx="24" ry="7" fill="#150d09"/>
+                <path d="M64 73 Q80 90 96 73 L96 84 Q80 103 64 84 Z" fill="#e3ddcf"/>
+                <path d="M68 52 Q72 49 75 52" stroke="#4f2f1e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                <path d="M85 52 Q89 49 92 52" stroke="#4f2f1e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                <circle cx="71" cy="57" r="2.3" fill="#1c100a"/>
+                <circle cx="89" cy="57" r="2.3" fill="#1c100a"/>
+                <path d="M80 59 Q78 67 81 72" stroke="#9f6d49" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M72 77 Q80 80 88 77" stroke="#8a5534" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M79 102 L113 146" stroke="#8b592f" stroke-width="7" stroke-linecap="round"/>
+                <ellipse cx="118" cy="156" rx="15" ry="22" fill="#8f5b2f"/>
+                <rect x="113" y="116" width="6" height="42" rx="3" fill="#a46b38"/>
+                <line x1="116" y1="121" x2="116" y2="174" stroke="#f5e8c8" stroke-width="1.3"/>
+                <line x1="120" y1="121" x2="120" y2="174" stroke="#f5e8c8" stroke-width="1.3"/>
+                <path d="M61 141 Q77 132 90 138" stroke="#c99566" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M102 139 Q111 144 117 146" stroke="#c99566" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M70 214 Q76 228 68 236" stroke="#3d2415" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M90 214 Q94 228 87 236" stroke="#3d2415" stroke-width="8" fill="none" stroke-linecap="round"/>
+              </svg>
+              <div class="character__equalizer" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="character__label">Естемес</div>
+          </div>
+
+          <div id="char-oraz" class="character character--oraz">
+            <div class="character__portrait">
+              <div class="character__aura"></div>
+              <svg viewBox="0 0 160 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <ellipse cx="78" cy="222" rx="36" ry="10" fill="#28170f" opacity="0.22"/>
+                <path d="M61 88 Q65 75 79 75 Q95 75 99 88 L102 102 Q86 108 68 108 Z" fill="#c88a5f"/>
+                <path d="M50 98 Q62 84 80 84 Q101 84 112 99 L120 194 Q101 214 80 215 Q59 214 40 194 Z" fill="#255139"/>
+                <path d="M53 108 Q40 130 37 160 Q41 171 54 166 L65 132 Z" fill="#1d422f"/>
+                <path d="M108 108 Q121 129 124 160 Q120 171 108 166 L95 132 Z" fill="#1b3e2c"/>
+                <ellipse cx="80" cy="51" rx="24" ry="27" fill="#ca8d62"/>
+                <path d="M55 28 Q80 11 105 28 L101 39 Q80 31 59 39 Z" fill="#26321c"/>
+                <rect x="52" y="21" width="56" height="18" rx="6" fill="#38502b"/>
+                <ellipse cx="80" cy="20" rx="22" ry="6.5" fill="#162010"/>
+                <path d="M68 51 Q72 48 75 51" stroke="#4a2e1e" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+                <path d="M85 51 Q89 48 92 51" stroke="#4a2e1e" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+                <circle cx="71" cy="56" r="2.2" fill="#140b07"/>
+                <circle cx="89" cy="56" r="2.2" fill="#140b07"/>
+                <path d="M80 58 Q77 66 81 71" stroke="#a16f4c" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M69 74 Q80 81 91 74" stroke="#7c4c30" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M75 101 L109 144" stroke="#8b592f" stroke-width="7" stroke-linecap="round"/>
+                <ellipse cx="114" cy="154" rx="15" ry="22" fill="#8f5b2f"/>
+                <rect x="109" y="115" width="6" height="42" rx="3" fill="#a46b38"/>
+                <line x1="112" y1="120" x2="112" y2="173" stroke="#f5e8c8" stroke-width="1.3"/>
+                <line x1="116" y1="120" x2="116" y2="173" stroke="#f5e8c8" stroke-width="1.3"/>
+                <path d="M63 140 Q79 132 95 139" stroke="#c88a5f" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M102 138 Q111 143 117 145" stroke="#c88a5f" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M68 214 Q74 228 67 236" stroke="#163224" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path d="M91 214 Q96 228 89 236" stroke="#163224" stroke-width="8" fill="none" stroke-linecap="round"/>
+              </svg>
+              <div class="character__equalizer" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="character__label">Оразымбет</div>
+          </div>
+
+          <div id="char-zhanyl" class="character character--zhanyl">
+            <div class="character__portrait">
+              <div class="character__aura" style="background: radial-gradient(circle, rgba(226, 98, 125, 0.28), transparent 68%);"></div>
+              <svg viewBox="0 0 150 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <ellipse cx="76" cy="212" rx="31" ry="10" fill="#28170f" opacity="0.2"/>
+                <path d="M64 81 Q68 70 76 70 Q86 70 91 81 L92 95 Q76 100 60 94 Z" fill="#d39d72"/>
+                <path d="M49 97 Q60 84 76 84 Q93 84 104 98 L112 184 Q96 205 76 206 Q56 205 40 184 Z" fill="#8a263f"/>
+                <path d="M57 105 Q49 122 47 146 Q50 153 60 149 L68 121 Z" fill="#7a1f35"/>
+                <path d="M95 105 Q103 122 105 146 Q102 152 93 148 L85 122 Z" fill="#7a1f35"/>
+                <ellipse cx="76" cy="50" rx="23" ry="26" fill="#d6a174"/>
+                <path d="M53 43 Q76 16 99 43 L95 69 Q76 58 57 69 Z" fill="#d8506c"/>
+                <path d="M58 66 Q62 76 66 98" stroke="#26130d" stroke-width="4.2" fill="none" stroke-linecap="round"/>
+                <path d="M94 66 Q90 77 86 98" stroke="#26130d" stroke-width="4.2" fill="none" stroke-linecap="round"/>
+                <circle cx="68" cy="52" r="2.2" fill="#140b07"/>
+                <circle cx="84" cy="52" r="2.2" fill="#140b07"/>
+                <path d="M76 56 Q74 64 77 68" stroke="#b37c56" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M69 72 Q76 76 83 72" stroke="#a23f51" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M48 183 Q75 192 104 183" stroke="#6e1a2d" stroke-width="5" fill="none" opacity="0.4" stroke-linecap="round"/>
+                <path d="M48 206 Q54 220 46 228" stroke="#5a1626" stroke-width="7" fill="none" stroke-linecap="round"/>
+                <path d="M104 206 Q98 220 106 228" stroke="#5a1626" stroke-width="7" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="character__label">Жаңыл</div>
+          </div>
+
+          <div id="milkingScene" class="milking-scene" aria-hidden="true">
+            <svg viewBox="0 0 190 170" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="96" cy="154" rx="52" ry="10" fill="#28170f" opacity="0.2"/>
+              <g class="milking-body">
+                <path d="M95 66 Q100 56 109 56 Q120 56 124 68 L124 80 Q110 85 96 79 Z" fill="#d5a075"/>
+                <path d="M87 40 Q109 18 130 40 L126 66 Q110 55 92 66 Z" fill="#d8506c"/>
+                <ellipse cx="109" cy="38" rx="21" ry="22" fill="#d9a77b"/>
+                <circle cx="101" cy="38" r="2.1" fill="#140b07"/>
+                <circle cx="117" cy="38" r="2.1" fill="#140b07"/>
+                <path d="M108 42 Q106 48 109 51" stroke="#b27b55" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <path d="M101 56 Q109 60 117 56" stroke="#9c3b4d" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M76 82 Q92 72 111 79 Q126 84 133 99 L144 135 Q126 147 106 146 Q82 145 63 131 Z" fill="#8a263f"/>
+                <path d="M81 130 Q66 141 57 151" stroke="#6c1b2d" stroke-width="12" fill="none" stroke-linecap="round"/>
+                <path d="M112 144 Q126 152 137 154" stroke="#6c1b2d" stroke-width="12" fill="none" stroke-linecap="round"/>
+                <path class="milker-arm-back" d="M85 92 Q97 98 104 107" stroke="#d5a075" stroke-width="8" fill="none" stroke-linecap="round"/>
+                <path class="milker-arm" d="M118 92 Q133 98 143 105" stroke="#d5a075" stroke-width="8" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+
+          <div id="stageStatus" class="stage-status">Камерадан ишараны күтіңіз. 1 немесе 2 саусақ көрсетіңіз.</div>
+          <div id="gesturePill" class="gesture-pill">Белгі: —</div>
+          <div id="milkPill" class="milk-pill">Сүт тек 2 саусақ пен дұрыс күйде ғана ағады.</div>
+
+          <div class="caption">
+            <div id="sceneLabel" class="caption__label">Күту режімі</div>
+            <div id="sceneText" class="caption__text">Камера алдында 1 не 2 саусақ көрсетіңіз. Бір саусақ басқа әуенді, екі саусақ дұрыс күйді іске қосады.</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="camera-shell shell">
+        <div class="camera-head">
+          <h2>Қолмен басқару панелі</h2>
+          <p>MediaPipe камерадан саусақ қимылын таниды. 1 саусақ бірінші тректі, 2 саусақ “Бозінген” күйін ойнатады.</p>
+        </div>
+
+        <button id="unlockBtn" class="unlock-btn">Дыбысты іске қосу</button>
+
+        <div class="camera-frame">
+          <img src="/video_feed" alt="MediaPipe камера көрінісі">
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <span>Камера күйі</span>
+            <strong id="cameraState">Жүктелуде...</strong>
+          </div>
+          <div class="metric">
+            <span>Танылған белгі</span>
+            <strong id="gestureState">—</strong>
+          </div>
+          <div class="metric">
+            <span>Ағымдағы сахна</span>
+            <strong id="sceneState">Күту режімі</strong>
+          </div>
+          <div class="metric">
+            <span>Жүйе статусы</span>
+            <strong id="backendState">MediaPipe іске қосылып жатыр...</strong>
+          </div>
+        </div>
+
+        <div class="gesture-grid">
+          <div id="cardOne" class="gesture-card gesture-card--one">
+            <div class="gesture-num">1</div>
+            <div>
+              <h3>Бір саусақ</h3>
+              <p id="trackOneText">Бірінші ән ойналады. Бұл кезде нар сүт бермейді.</p>
+            </div>
+          </div>
+
+          <div id="cardTwo" class="gesture-card gesture-card--two">
+            <div class="gesture-num">2</div>
+            <div>
+              <h3>Екі саусақ</h3>
+              <p id="trackTwoText">Дұрыс күй ойналады. 3 секундтан кейін ғана нар сүт береді.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="countdownBox" class="countdown-box">Сүтке дейін: —</div>
+
+        <div class="helper-list">
+          <h3>Қалай қолданасыз</h3>
+          <ul>
+            <li>Алдымен “Дыбысты іске қосу” батырмасын бір рет басыңыз.</li>
+            <li>Камераға тек 1 саусақ не 2 саусақ анық көрсетіңіз.</li>
+            <li>2 саусақ танылған соң Жаңыл нарды дою қалпына келеді.</li>
+            <li>3 секунд өткенде ғана сүт ағады. 1 саусақта сүт болмайды.</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <footer>Локалды жоба: Python MediaPipe + веб-сахна</footer>
+  </div>
+
+  <audio id="audioOne" preload="auto" src="/media/one"></audio>
+  <audio id="audioTwo" preload="auto" src="/media/two"></audio>
+
+  <script>
+    const SCENES = {
+      idle: {
+        label: 'Күту режімі',
+        text: 'Камера алдында 1 не 2 саусақ көрсетіңіз. Бір саусақ басқа әуенді, екі саусақ дұрыс күйді іске қосады.'
+      },
+      one: {
+        label: '1 саусақ — бірінші ән',
+        text: 'Бірінші әуен ойнап тұр. Естемес алға шықты, бірақ бұл кезде нар сүт бермейді.'
+      },
+      two_wait: {
+        label: '2 саусақ — дұрыс күй',
+        text: 'Дұрыс күй танылды. Жаңыл нар жанына келді. 3 секундтан кейін ғана сүт шығуы тиіс.'
+      },
+      milk: {
+        label: 'Сүттің ағуы',
+        text: 'Дұрыс күй жүрекке жетті. Жаңыл доып отыр, нар иіп, сүт бере бастады.'
+      }
+    };
+
+    const stage = document.getElementById('stage');
+    const milkFill = document.getElementById('milkFill');
+    const milkingScene = document.getElementById('milkingScene');
+    const charEstemes = document.getElementById('char-estemes');
+    const charOraz = document.getElementById('char-oraz');
+    const charZhanyl = document.getElementById('char-zhanyl');
+
+    const stageStatus = document.getElementById('stageStatus');
+    const gesturePill = document.getElementById('gesturePill');
+    const milkPill = document.getElementById('milkPill');
+    const sceneLabel = document.getElementById('sceneLabel');
+    const sceneText = document.getElementById('sceneText');
+
+    const cameraState = document.getElementById('cameraState');
+    const gestureState = document.getElementById('gestureState');
+    const sceneState = document.getElementById('sceneState');
+    const backendState = document.getElementById('backendState');
+    const trackOneText = document.getElementById('trackOneText');
+    const trackTwoText = document.getElementById('trackTwoText');
+    const countdownBox = document.getElementById('countdownBox');
+    const cardOne = document.getElementById('cardOne');
+    const cardTwo = document.getElementById('cardTwo');
+    const unlockBtn = document.getElementById('unlockBtn');
+
+    const audioOne = document.getElementById('audioOne');
+    const audioTwo = document.getElementById('audioTwo');
+    const tracks = { one: audioOne, two: audioTwo };
+
+    let audioUnlocked = false;
+    let lastEventId = 0;
+    let latestScene = 'idle';
+
+    function createStars() {
+      const stars = document.getElementById('stars');
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < 72; i += 1) {
+        const star = document.createElement('span');
+        star.className = 'star';
+        const size = (Math.random() * 2.2 + 1).toFixed(2);
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = (Math.random() * 100).toFixed(2) + '%';
+        star.style.top = (Math.random() * 60).toFixed(2) + '%';
+        star.style.animationDelay = (Math.random() * 3.8).toFixed(2) + 's';
+        fragment.appendChild(star);
+      }
+      stars.appendChild(fragment);
+    }
+
+    async function primeAudio(audio) {
+      audio.muted = true;
+      audio.currentTime = 0;
+      try {
+        await audio.play();
+        audio.pause();
+      } catch (error) {
+        // Audio may still require a stronger user gesture in some browsers.
+      }
+      audio.currentTime = 0;
+      audio.muted = false;
+    }
+
+    async function unlockAudio() {
+      await primeAudio(audioOne);
+      await primeAudio(audioTwo);
+      audioUnlocked = true;
+      unlockBtn.textContent = 'Дыбыс дайын';
+      unlockBtn.classList.add('is-ready');
+      stageStatus.textContent = 'Дыбыс ашылды. Енді камераға 1 немесе 2 саусақ көрсетіңіз.';
+    }
+
+    function stopAllAudio() {
+      Object.values(tracks).forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
+    async function playTrack(trackKey) {
+      if (!trackKey || !tracks[trackKey]) return;
+
+      stopAllAudio();
+
+      if (!audioUnlocked) {
+        stageStatus.textContent = 'Әуенді автоматты ойнату үшін алдымен “Дыбысты іске қосу” батырмасын басыңыз.';
+        return;
+      }
+
+      try {
+        tracks[trackKey].currentTime = 0;
+        await tracks[trackKey].play();
+      } catch (error) {
+        stageStatus.textContent = 'Браузер әуенді бұғаттады. Дыбысты қайта іске қосып көріңіз.';
+      }
+    }
+
+    function setCharacterState(scene) {
+      [charEstemes, charOraz, charZhanyl].forEach((node) => {
+        node.classList.remove('is-active', 'is-muted', 'is-hidden');
+      });
+
+      if (scene === 'one') {
+        charEstemes.classList.add('is-active');
+        charOraz.classList.add('is-muted');
+        charZhanyl.classList.add('is-muted');
+      } else if (scene === 'two_wait' || scene === 'milk') {
+        charOraz.classList.add('is-active');
+        charEstemes.classList.add('is-muted');
+        charZhanyl.classList.add('is-hidden');
+      }
+    }
+
+    function setMilkingVisual(scene) {
+      const milking = scene === 'two_wait' || scene === 'milk';
+      milkingScene.classList.toggle('is-active', milking);
+
+      if (scene === 'milk') {
+        milkFill.setAttribute('y', '20');
+        milkFill.setAttribute('height', '38');
+      } else {
+        milkFill.setAttribute('y', '58');
+        milkFill.setAttribute('height', '0');
+      }
+    }
+
+    function renderScene(state) {
+      const scene = SCENES[state.scene] ? state.scene : 'idle';
+      latestScene = scene;
+      stage.dataset.scene = scene;
+      sceneLabel.textContent = SCENES[scene].label;
+      sceneText.textContent = SCENES[scene].text;
+      sceneState.textContent = SCENES[scene].label;
+      setCharacterState(scene);
+      setMilkingVisual(scene);
+
+      cardOne.classList.toggle('is-active', state.active_track === 'one');
+      cardTwo.classList.toggle('is-active', state.active_track === 'two');
+
+      milkPill.classList.toggle('is-alert', scene === 'milk');
+      if (scene === 'milk') {
+        milkPill.textContent = 'Нар сүт беріп тұр. Бұл сәт тек дұрыс күйден кейін пайда болады.';
+      } else if (scene === 'two_wait') {
+        milkPill.textContent = `Сүтке дейін уақыт: ${state.milk_countdown.toFixed(1)} с`;
+      } else if (scene === 'one') {
+        milkPill.textContent = '1 саусақта нар сүт бермейді.';
+      } else {
+        milkPill.textContent = 'Сүт тек 2 саусақ пен дұрыс күйде ғана ағады.';
+      }
+    }
+
+    function renderState(state) {
+      cameraState.textContent = state.camera_ready ? 'Камера жұмыс істеп тұр' : 'Камера табылмады';
+      gestureState.textContent = state.gesture_label;
+      backendState.textContent = state.status;
+      stageStatus.textContent = state.status;
+      gesturePill.textContent = 'Белгі: ' + state.gesture_label;
+
+      if (state.milk_countdown > 0) {
+        countdownBox.textContent = `Сүтке дейін: ${state.milk_countdown.toFixed(1)} с`;
+        countdownBox.classList.add('is-live');
+      } else if (state.scene === 'milk') {
+        countdownBox.textContent = 'Сүт ағып тұр';
+        countdownBox.classList.add('is-live');
+      } else {
+        countdownBox.textContent = 'Сүтке дейін: —';
+        countdownBox.classList.remove('is-live');
+      }
+
+      const trackOneMeta = state.tracks.one;
+      const trackTwoMeta = state.tracks.two;
+      trackOneText.textContent = trackOneMeta.available
+        ? `${trackOneMeta.title}. Бұл кезде нар сүт бермейді.`
+        : `${trackOneMeta.title}. Файл табылмады.`
+      trackTwoText.textContent = trackTwoMeta.available
+        ? `${trackTwoMeta.title}. 3 секундтан кейін ғана сүт ағады.`
+        : `${trackTwoMeta.title}. Файл табылмады.`
+
+      renderScene(state);
+    }
+
+    async function sync() {
+      try {
+        const response = await fetch('/api/state', { cache: 'no-store' });
+        const state = await response.json();
+        renderState(state);
+
+        if (state.event_id !== lastEventId) {
+          lastEventId = state.event_id;
+          await playTrack(state.active_track);
+        }
+      } catch (error) {
+        cameraState.textContent = 'Байланыс жоқ';
+        backendState.textContent = 'Python серверімен байланыс үзілді.';
+        stageStatus.textContent = 'Серверге қосылу мүмкін болмады.';
+      }
+    }
+
+    unlockBtn.addEventListener('click', unlockAudio);
+
+    createStars();
+    sync();
+    setInterval(sync, 250);
+  </script>
+</body>
+</html>
