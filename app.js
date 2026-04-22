@@ -444,11 +444,12 @@ function processFrame() {
   }
 
   if (cameraVideo.currentTime !== lastVideoTime) {
+    const now = performance.now();
     lastVideoTime = cameraVideo.currentTime;
-    const result = handLandmarker.detectForVideo(cameraVideo, performance.now());
+    const result = handLandmarker.detectForVideo(cameraVideo, now);
     drawResults(result);
     const { gesture, label } = detectGesture(result);
-    advanceState(performance.now() / 1000, gesture, label);
+    advanceState(now / 1000, gesture, label);
   }
 
   rafId = requestAnimationFrame(processFrame);

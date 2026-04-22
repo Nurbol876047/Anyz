@@ -17,6 +17,10 @@ TRACKS = {
         "path": BASE_DIR / "Төлеген Момбеков - Бозінген (күй).mp3",
     },
 }
+VIDEO_CLIP = {
+    "title": "Домбыра интерактивіне арналған видео",
+    "path": BASE_DIR / "media" / "dombra_story.mp4",
+}
 
 
 def build_tracks_payload() -> dict[str, dict[str, str | bool]]:
@@ -57,9 +61,19 @@ def index() -> Response:
     return send_file(BASE_DIR / "index.html")
 
 
+@app.get("/dombra")
+def dombra_page() -> Response:
+    return send_file(BASE_DIR / "dombra.html")
+
+
 @app.get("/app.js")
 def app_script() -> Response:
     return send_file(BASE_DIR / "app.js", mimetype="text/javascript")
+
+
+@app.get("/dombra.js")
+def dombra_script() -> Response:
+    return send_file(BASE_DIR / "dombra.js", mimetype="text/javascript")
 
 
 @app.get("/api/state")
@@ -80,6 +94,15 @@ def media(track_key: str):
     return send_file(path, conditional=True, etag=True)
 
 
+@app.get("/media/dombra-video")
+def dombra_video():
+    path = VIDEO_CLIP["path"]
+    if not path.exists():
+        return ("Video not found", 404)
+
+    return send_file(path, conditional=True, etag=True)
+
+
 @app.get("/health")
 def health() -> Response:
     return jsonify(
@@ -87,6 +110,7 @@ def health() -> Response:
             "ok": True,
             "gesture_runtime": "browser-js-mediapipe",
             "tracks": build_tracks_payload(),
+            "dombra_video": VIDEO_CLIP["path"].exists(),
         }
     )
 

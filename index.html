@@ -21,6 +21,10 @@
       --scene-bottom: #e3ae69;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -62,6 +66,45 @@
     .hero {
       text-align: center;
       padding: 8px 8px 22px;
+    }
+
+    .dombra-shortcut {
+      position: fixed;
+      left: 22px;
+      bottom: 22px;
+      z-index: 50;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-width: 172px;
+      padding: 18px 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(239, 191, 104, 0.2);
+      background: rgba(18, 8, 5, 0.82);
+      color: #fae7ba;
+      font-size: 1.24rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .dombra-shortcut:hover {
+      transform: translateY(-2px);
+      border-color: rgba(239, 191, 104, 0.34);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.34);
+    }
+
+    .dombra-shortcut::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffe7b0 0 32%, #cf8337 72%, transparent 74%);
+      box-shadow: 0 0 14px rgba(239, 191, 104, 0.35);
     }
 
     .hero__eyebrow {
@@ -641,7 +684,7 @@
     }
 
     .character--estemes {
-      left: 296px;
+      left: 332px;
       bottom: 148px;
     }
 
@@ -1067,6 +1110,407 @@
       margin-right: 8px;
     }
 
+    .dombra-section {
+      position: relative;
+      margin-top: 22px;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .dombra-section::before,
+    .dombra-section::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(18px);
+      opacity: 0.6;
+    }
+
+    .dombra-section::before {
+      width: 280px;
+      height: 280px;
+      top: -96px;
+      left: -54px;
+      background: radial-gradient(circle, rgba(239, 191, 104, 0.18), transparent 72%);
+    }
+
+    .dombra-section::after {
+      width: 320px;
+      height: 320px;
+      right: -80px;
+      bottom: -120px;
+      background: radial-gradient(circle, rgba(92, 123, 183, 0.12), transparent 72%);
+    }
+
+    .dombra-section__head {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+    }
+
+    .dombra-section__head h2 {
+      margin-top: 12px;
+      font-family: 'Marcellus', serif;
+      font-size: clamp(1.9rem, 3vw, 3rem);
+      font-weight: 400;
+      color: #ffe6b0;
+    }
+
+    .dombra-section__head p {
+      max-width: 540px;
+      color: #dfc393;
+      font-size: 1.08rem;
+      line-height: 1.42;
+    }
+
+    .dombra-layout {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(320px, 0.84fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .dombra-stage {
+      position: relative;
+      min-height: 760px;
+      overflow: hidden;
+      border-radius: 28px;
+      border: 1px solid rgba(239, 191, 104, 0.12);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(239, 191, 104, 0.12), transparent 24%),
+        radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.06), transparent 18%),
+        linear-gradient(180deg, rgba(35, 16, 10, 0.96) 0%, rgba(14, 7, 5, 0.98) 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 -40px 70px rgba(0, 0, 0, 0.34),
+        0 24px 40px rgba(0, 0, 0, 0.24);
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .dombra-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0 46%, rgba(255, 255, 255, 0.02) 49%, transparent 52%),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 46px,
+          rgba(255, 255, 255, 0.015) 46px 47px
+        );
+      opacity: 0.22;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .dombra-stage__glow {
+      position: absolute;
+      top: 98px;
+      left: 50%;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(255, 209, 132, 0.26), transparent 72%);
+      filter: blur(12px);
+      opacity: 0.82;
+      z-index: 0;
+    }
+
+    .dombra-status-board {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      z-index: 6;
+      display: grid;
+      gap: 10px;
+    }
+
+    .dombra-status-card {
+      padding: 14px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(239, 191, 104, 0.14);
+      background: rgba(15, 9, 7, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.14);
+    }
+
+    .dombra-status-card strong {
+      display: block;
+      color: #fae7ba;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+
+    .dombra-status-card span {
+      display: block;
+      margin-top: 6px;
+      color: #d8bc8a;
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .dombra-path {
+      position: absolute;
+      top: 104px;
+      bottom: 72px;
+      left: 50%;
+      width: 84px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 244, 223, 0.02), rgba(255, 228, 171, 0.08));
+      border: 1px solid rgba(239, 191, 104, 0.1);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 0 22px rgba(239, 191, 104, 0.04);
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .dombra-path::before {
+      content: "";
+      position: absolute;
+      inset: 12px 34px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 239, 205, 0.12), rgba(255, 239, 205, 0));
+      opacity: 0.62;
+    }
+
+    .dombra-path__fill {
+      position: absolute;
+      inset: 0;
+      transform-origin: top;
+      transform: scaleY(0);
+      background: linear-gradient(180deg, rgba(255, 238, 194, 0.48), rgba(240, 194, 108, 0.12));
+      transition: transform 0.1s linear;
+    }
+
+    .dombra-hand-cursor {
+      position: absolute;
+      top: 34%;
+      left: 50%;
+      width: 34px;
+      height: 34px;
+      margin-left: -17px;
+      margin-top: -17px;
+      opacity: 0;
+      transform: scale(0.84);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 7;
+      pointer-events: none;
+    }
+
+    .dombra-hand-cursor.is-visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .dombra-hand-cursor span,
+    .dombra-hand-cursor::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      border-radius: 50%;
+    }
+
+    .dombra-hand-cursor span {
+      background: radial-gradient(circle, rgba(255, 248, 232, 0.98) 0 26%, rgba(239, 191, 104, 0.86) 48%, rgba(239, 191, 104, 0.1) 74%, transparent 76%);
+      box-shadow: 0 0 18px rgba(239, 191, 104, 0.42);
+    }
+
+    .dombra-hand-cursor::before {
+      inset: -10px;
+      border: 1px solid rgba(255, 235, 188, 0.22);
+      animation: cursor-pulse 1.3s ease-in-out infinite;
+    }
+
+    @keyframes cursor-pulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.3; }
+      50% { transform: scale(1.08); opacity: 0.78; }
+    }
+
+    .dombra-illustration {
+      position: relative;
+      z-index: 3;
+      width: min(82%, 500px);
+      height: auto;
+      filter: drop-shadow(0 30px 34px rgba(0, 0, 0, 0.34));
+      transform: translateY(18px);
+    }
+
+    .dombra-wood-light {
+      fill: url(#dombraWoodLight);
+    }
+
+    .dombra-wood-deep {
+      fill: url(#dombraWoodDeep);
+    }
+
+    .dombra-trim {
+      fill: rgba(113, 71, 35, 0.92);
+    }
+
+    .dombra-fret {
+      stroke: rgba(98, 63, 36, 0.68);
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .dombra-string {
+      stroke: rgba(255, 241, 214, 0.92);
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(255, 229, 175, 0.18));
+      transition: stroke 0.2s ease, filter 0.2s ease;
+    }
+
+    .dombra-string-glow {
+      stroke: rgba(255, 225, 154, 0.12);
+      stroke-width: 10;
+      stroke-linecap: round;
+    }
+
+    .dombra-hole {
+      fill: rgba(22, 12, 8, 0.88);
+      stroke: rgba(236, 191, 104, 0.24);
+      stroke-width: 5;
+    }
+
+    .dombra-stage.is-armed .dombra-string,
+    .dombra-stage.is-playing .dombra-string {
+      stroke: rgba(255, 243, 219, 1);
+      filter: drop-shadow(0 0 10px rgba(255, 231, 180, 0.34));
+    }
+
+    .dombra-stage.is-playing .dombra-illustration {
+      animation: dombra-pulse 0.42s ease-in-out 4 alternate;
+    }
+
+    @keyframes dombra-pulse {
+      from { transform: translateY(18px) scale(1); }
+      to { transform: translateY(14px) scale(1.01); }
+    }
+
+    .dombra-media {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .dombra-media__copy,
+    .dombra-meter {
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(239, 191, 104, 0.1);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .dombra-media__copy h3 {
+      font-family: 'Marcellus', serif;
+      font-size: 1.42rem;
+      font-weight: 400;
+      color: #ffe0a6;
+    }
+
+    .dombra-media__copy p {
+      margin-top: 8px;
+      color: #ddc393;
+      line-height: 1.4;
+      font-size: 1rem;
+    }
+
+    .dombra-video-shell {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid rgba(239, 191, 104, 0.12);
+      background:
+        radial-gradient(circle at top, rgba(255, 208, 132, 0.12), transparent 30%),
+        linear-gradient(180deg, rgba(18, 9, 8, 0.3), rgba(18, 9, 8, 0.96));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .dombra-video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: #080403;
+    }
+
+    .dombra-video-fallback {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 26px;
+      text-align: center;
+      color: #f2ddb2;
+      font-size: 1.06rem;
+      line-height: 1.4;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(239, 191, 104, 0.16), transparent 28%),
+        linear-gradient(180deg, rgba(17, 8, 5, 0.2), rgba(17, 8, 5, 0.94));
+      transition: opacity 0.25s ease;
+    }
+
+    .dombra-video-fallback.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .dombra-meter__head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      color: #f7e7bf;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .dombra-meter__head strong {
+      font-size: 1.08rem;
+      color: #ffe8b6;
+    }
+
+    .dombra-meter__track {
+      margin-top: 12px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .dombra-meter__fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f0c271, #8ce3b1);
+      transition: width 0.1s linear;
+    }
+
+    .dombra-meter p {
+      margin-top: 10px;
+      color: #cfae79;
+      line-height: 1.36;
+      font-size: 0.98rem;
+    }
+
     footer {
       text-align: center;
       padding: 18px 12px 2px;
@@ -1077,6 +1521,10 @@
 
     @media (max-width: 1200px) {
       .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .dombra-layout {
         grid-template-columns: 1fr;
       }
 
@@ -1094,6 +1542,15 @@
     @media (max-width: 860px) {
       .page {
         width: min(100%, calc(100% - 16px));
+      }
+
+      .dombra-shortcut {
+        left: 12px;
+        right: auto;
+        bottom: 14px;
+        min-width: 156px;
+        padding: 16px 24px;
+        font-size: 1.08rem;
       }
 
       #stage {
@@ -1141,7 +1598,7 @@
       }
 
       .character--estemes {
-        left: 208px;
+        left: 232px;
         bottom: 138px;
       }
 
@@ -1183,6 +1640,25 @@
 
       .metrics {
         grid-template-columns: 1fr;
+      }
+
+      .dombra-section {
+        padding: 16px;
+      }
+
+      .dombra-section__head {
+        flex-direction: column;
+        align-items: start;
+      }
+
+      .dombra-stage {
+        min-height: 650px;
+      }
+
+      .dombra-path {
+        top: 108px;
+        bottom: 64px;
+        width: 76px;
       }
     }
 
@@ -1242,7 +1718,7 @@
       }
 
       .character--estemes {
-        left: 164px;
+        left: 186px;
         bottom: 124px;
       }
 
@@ -1276,11 +1752,54 @@
       .milk-pill {
         font-size: 0.88rem;
       }
+
+      .dombra-section__head h2 {
+        font-size: 1.7rem;
+      }
+
+      .dombra-stage {
+        min-height: 560px;
+      }
+
+      .dombra-status-board {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+      }
+
+      .dombra-status-card {
+        padding: 12px 14px;
+      }
+
+      .dombra-status-card strong {
+        font-size: 1rem;
+      }
+
+      .dombra-status-card span {
+        font-size: 0.92rem;
+      }
+
+      .dombra-path {
+        top: 120px;
+        bottom: 52px;
+        width: 64px;
+      }
+
+      .dombra-illustration {
+        width: min(90%, 360px);
+      }
+
+      .dombra-media__copy,
+      .dombra-meter {
+        padding: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="page">
+    <a class="dombra-shortcut" href="/dombra">Алға</a>
+
     <header class="hero">
       <div class="hero__eyebrow">Frontend JS + MediaPipe басқаруы</div>
       <h1>Күй аңызы</h1>

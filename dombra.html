@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домбыра интерактиві</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Marcellus&display=swap');
+
+    :root {
+      --bg: #110907;
+      --ink: #f2e2bf;
+      --muted: #d1b17b;
+      --gold: #efbf68;
+      --line: rgba(236, 191, 104, 0.14);
+      --panel: rgba(24, 12, 8, 0.78);
+      --shadow: 0 28px 55px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(233, 153, 72, 0.15), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(62, 84, 126, 0.16), transparent 32%),
+        linear-gradient(180deg, #160c08 0%, #090403 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0 3px,
+          rgba(255, 255, 255, 0.35) 3px 4px
+        );
+      mix-blend-mode: soft-light;
+    }
+
+    .page {
+      width: min(1440px, calc(100% - 26px));
+      margin: 0 auto;
+      padding: 26px 0 22px;
+    }
+
+    .shell {
+      border-radius: 28px;
+      border: 1px solid rgba(236, 191, 104, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+        rgba(16, 8, 5, 0.76);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .back-link,
+    .next-link,
+    .reset-btn {
+      appearance: none;
+      border: 1px solid rgba(239, 191, 104, 0.16);
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: rgba(18, 8, 5, 0.82);
+      color: #fae7ba;
+      text-decoration: none;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, opacity 0.22s ease;
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+    }
+
+    .back-link:hover,
+    .next-link:hover,
+    .reset-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(239, 191, 104, 0.3);
+    }
+
+    .topbar__pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .intro {
+      padding: 22px 24px 24px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .intro h1 {
+      margin-top: 16px;
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+      font-size: clamp(2.2rem, 4.6vw, 4rem);
+      line-height: 1.06;
+      color: #fae8b9;
+      text-shadow: 0 0 28px rgba(240, 190, 93, 0.15);
+    }
+
+    .intro p {
+      max-width: 900px;
+      margin: 12px auto 0;
+      color: #e3cb98;
+      font-size: clamp(1.04rem, 1.8vw, 1.2rem);
+      line-height: 1.45;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(330px, 0.82fr);
+      gap: 18px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .instrument-stage {
+      position: relative;
+      min-height: 820px;
+      overflow: hidden;
+      padding: 16px;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(239, 191, 104, 0.16), transparent 26%),
+        radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.05), transparent 18%),
+        linear-gradient(180deg, rgba(37, 16, 8, 0.98) 0%, rgba(12, 6, 5, 1) 100%);
+    }
+
+    .instrument-stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0 46%, rgba(255, 255, 255, 0.018) 49%, transparent 52%),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 46px,
+          rgba(255, 255, 255, 0.014) 46px 47px
+        );
+      opacity: 0.24;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .stage-status {
+      position: relative;
+      z-index: 5;
+      padding: 16px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(239, 191, 104, 0.12);
+      background: rgba(15, 9, 7, 0.46);
+      backdrop-filter: blur(8px);
+    }
+
+    .stage-status strong {
+      display: block;
+      color: #fae7ba;
+      font-size: 1.12rem;
+      line-height: 1.2;
+      font-weight: 600;
+    }
+
+    .stage-status span {
+      display: block;
+      margin-top: 6px;
+      color: #d8bc8a;
+      font-size: 1rem;
+      line-height: 1.38;
+    }
+
+    .stage-body {
+      position: absolute;
+      inset: 100px 18px 18px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: rgba(30, 13, 8, 0.34);
+      z-index: 1;
+    }
+
+    .stage-glow {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, rgba(255, 209, 132, 0.28), transparent 72%);
+      filter: blur(12px);
+      opacity: 0.82;
+      z-index: 0;
+    }
+
+    .dombra-guide {
+      position: absolute;
+      top: 24px;
+      bottom: 26px;
+      left: 50%;
+      width: 84px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 244, 223, 0.02), rgba(255, 228, 171, 0.08));
+      border: 1px solid rgba(239, 191, 104, 0.1);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 0 22px rgba(239, 191, 104, 0.04);
+      overflow: hidden;
+      z-index: 1;
+      transition: opacity 0.25s ease;
+    }
+
+    .dombra-guide::before {
+      content: "";
+      position: absolute;
+      inset: 14px 34px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 239, 205, 0.14), rgba(255, 239, 205, 0));
+      opacity: 0.72;
+    }
+
+    .dombra-guide__fill {
+      position: absolute;
+      inset: 0;
+      transform-origin: top;
+      transform: scaleY(0);
+      background: linear-gradient(180deg, rgba(255, 238, 194, 0.5), rgba(240, 194, 108, 0.12));
+      transition: transform 0.1s linear;
+    }
+
+    .hand-cursor {
+      position: absolute;
+      top: 34%;
+      left: 50%;
+      width: 36px;
+      height: 36px;
+      margin-left: -18px;
+      margin-top: -18px;
+      opacity: 0;
+      transform: scale(0.84);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 7;
+      pointer-events: none;
+    }
+
+    .hand-cursor.is-visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .hand-cursor span,
+    .hand-cursor::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      border-radius: 50%;
+    }
+
+    .hand-cursor span {
+      background: radial-gradient(circle, rgba(255, 248, 232, 0.98) 0 26%, rgba(239, 191, 104, 0.86) 48%, rgba(239, 191, 104, 0.1) 74%, transparent 76%);
+      box-shadow: 0 0 18px rgba(239, 191, 104, 0.42);
+    }
+
+    .hand-cursor::before {
+      inset: -10px;
+      border: 1px solid rgba(255, 235, 188, 0.22);
+      animation: pulse 1.3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.3; }
+      50% { transform: scale(1.08); opacity: 0.78; }
+    }
+
+    .dombra-visual {
+      position: absolute;
+      inset: 18px 20px 10px;
+      display: grid;
+      place-items: end center;
+      z-index: 3;
+      transition: opacity 0.34s ease, transform 0.34s ease;
+    }
+
+    .dombra-illustration {
+      width: auto;
+      height: min(100%, 660px);
+      max-width: min(78%, 430px);
+      max-height: 100%;
+      filter: drop-shadow(0 30px 34px rgba(0, 0, 0, 0.34));
+      transform: translateY(0);
+    }
+
+    .dombra-wood-light {
+      fill: url(#dombraWoodLight);
+    }
+
+    .dombra-wood-deep {
+      fill: url(#dombraWoodDeep);
+    }
+
+    .dombra-trim {
+      fill: rgba(113, 71, 35, 0.92);
+    }
+
+    .dombra-fret {
+      stroke: rgba(98, 63, 36, 0.68);
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .dombra-string {
+      stroke: rgba(255, 241, 214, 0.92);
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(255, 229, 175, 0.18));
+      transition: stroke 0.2s ease, filter 0.2s ease;
+    }
+
+    .dombra-string-glow {
+      stroke: rgba(255, 225, 154, 0.12);
+      stroke-width: 10;
+      stroke-linecap: round;
+    }
+
+    .dombra-hole {
+      fill: rgba(22, 12, 8, 0.88);
+      stroke: rgba(236, 191, 104, 0.24);
+      stroke-width: 5;
+    }
+
+    .instrument-stage.is-armed .dombra-string {
+      stroke: rgba(255, 243, 219, 1);
+      filter: drop-shadow(0 0 10px rgba(255, 231, 180, 0.34));
+    }
+
+    .stage-video-wrap {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.34s ease;
+      background: #050202;
+      z-index: 6;
+    }
+
+    .stage-video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      background: #050202;
+    }
+
+    .stage-video-overlay {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+
+    .reset-btn {
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .instrument-stage.is-video-live .stage-video-wrap {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .instrument-stage.is-video-live .reset-btn {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .instrument-stage.is-video-live .dombra-visual,
+    .instrument-stage.is-video-live .dombra-guide,
+    .instrument-stage.is-video-live .hand-cursor {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .instrument-stage.is-video-live .dombra-visual {
+      transform: scale(0.96);
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 16px;
+      align-self: stretch;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card h2,
+    .card h3 {
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+      color: #ffe2a6;
+    }
+
+    .card h2 {
+      font-size: 1.66rem;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+    }
+
+    .card p {
+      margin-top: 8px;
+      color: #dfc393;
+      line-height: 1.4;
+      font-size: 1.03rem;
+    }
+
+    .camera-frame {
+      position: relative;
+      margin-top: 16px;
+      aspect-ratio: 16 / 9;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(236, 191, 104, 0.12);
+      background: rgba(9, 5, 4, 0.74);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .camera-frame video,
+    .camera-frame canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #120908;
+      transform: scaleX(-1);
+    }
+
+    .camera-frame canvas,
+    .camera-fallback,
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    .camera-frame canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .camera-fallback {
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: #f7e7bf;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      background:
+        radial-gradient(circle at top, rgba(93, 184, 243, 0.12), transparent 42%),
+        linear-gradient(180deg, rgba(18, 9, 8, 0.42), rgba(18, 9, 8, 0.92));
+      transition: opacity 0.3s ease;
+    }
+
+    .camera-fallback.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .camera-overlay {
+      z-index: 4;
+      display: grid;
+      align-content: end;
+      gap: 10px;
+      padding: 16px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(8, 5, 3, 0) 55%, rgba(8, 5, 3, 0.58) 100%);
+    }
+
+    .camera-overlay__label {
+      color: #f7e7bf;
+      font-size: 1rem;
+      line-height: 1.3;
+      text-shadow: 0 6px 16px rgba(0, 0, 0, 0.42);
+    }
+
+    .meter-track {
+      margin-top: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .meter-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f0c271, #8ce3b1);
+      transition: width 0.1s linear;
+    }
+
+    .meter-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      color: #f7e7bf;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .meter-head strong {
+      font-size: 1.08rem;
+      color: #ffe8b6;
+    }
+
+    .helper-list {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      color: #dfc393;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .helper-list li::before {
+      content: "•";
+      color: #efc36d;
+      margin-right: 8px;
+    }
+
+    .side-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px 12px 2px;
+      color: #9f8158;
+      font-size: 0.98rem;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 1180px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .instrument-stage {
+        min-height: 780px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: min(100%, calc(100% - 16px));
+      }
+
+      .intro,
+      .card,
+      .instrument-stage {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .instrument-stage {
+        min-height: 660px;
+      }
+
+      .stage-body {
+        inset: 102px 14px 14px;
+      }
+
+      .dombra-guide {
+        width: 72px;
+      }
+
+      .dombra-illustration {
+        height: min(100%, 600px);
+        max-width: min(82%, 360px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .instrument-stage {
+        min-height: 620px;
+      }
+
+      .stage-status {
+        padding: 14px;
+      }
+
+      .stage-status strong {
+        font-size: 1rem;
+      }
+
+      .stage-status span,
+      .card p,
+      .helper-list {
+        font-size: 0.94rem;
+      }
+
+      .dombra-guide {
+        top: 18px;
+        bottom: 18px;
+        width: 62px;
+      }
+
+      .dombra-illustration {
+        height: min(100%, 500px);
+        max-width: min(88%, 300px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <a class="back-link" href="/">Артқа</a>
+      <div class="topbar__pill">Екінші бет • Домбыра</div>
+    </div>
+
+    <section class="intro shell">
+      <div class="eyebrow">Жеке домбыра беті</div>
+      <h1>Домбыра жеке экранда тұрады</h1>
+      <p>
+        Бұл екінші функционал бірінші сахнаның қасында емес. Мұнда тек домбыра бар:
+        камера 2–3 секунд бойы қол қимылын көргенде домбыра жоғалып, дәл сол орнында видео шығады.
+      </p>
+    </section>
+
+    <section class="workspace">
+      <section id="instrumentStage" class="instrument-stage shell">
+        <div class="stage-status">
+          <strong id="stageStatusTitle">Қимылды бастауға дайын</strong>
+          <span id="stageStatusText">Камера алдында қолыңызды 2–3 секунд қимылдатыңыз. Сонда видео осы блоктың ішінде ашылады.</span>
+        </div>
+
+        <div class="stage-body">
+          <div class="stage-glow" aria-hidden="true"></div>
+
+          <div class="dombra-guide" aria-hidden="true">
+            <span id="guideFill" class="dombra-guide__fill"></span>
+          </div>
+
+          <div id="handCursor" class="hand-cursor" aria-hidden="true">
+            <span></span>
+          </div>
+
+          <div class="dombra-visual" aria-hidden="true">
+            <svg class="dombra-illustration" viewBox="0 0 420 900" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="dombraWoodLight" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#efc577"/>
+                  <stop offset="42%" stop-color="#c58644"/>
+                  <stop offset="100%" stop-color="#6d3b1b"/>
+                </linearGradient>
+                <linearGradient id="dombraWoodDeep" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9f5e2b"/>
+                  <stop offset="100%" stop-color="#3d1f0f"/>
+                </linearGradient>
+                <radialGradient id="dombraBodyGlow" cx="50%" cy="42%" r="60%">
+                  <stop offset="0%" stop-color="rgba(255,224,164,0.42)"/>
+                  <stop offset="100%" stop-color="rgba(255,224,164,0)"/>
+                </radialGradient>
+              </defs>
+
+              <ellipse cx="210" cy="834" rx="128" ry="24" fill="rgba(18, 9, 5, 0.38)"/>
+              <ellipse cx="210" cy="648" rx="122" ry="166" fill="url(#dombraBodyGlow)" opacity="0.75"/>
+
+              <path class="dombra-wood-deep" d="M184 70 Q210 46 236 70 L236 458 Q210 470 184 458 Z"/>
+              <path class="dombra-trim" d="M172 54 Q210 10 248 54 Q249 88 244 106 L176 106 Q171 88 172 54 Z"/>
+              <rect x="166" y="40" width="88" height="38" rx="18" fill="#3a1e11"/>
+              <circle cx="180" cy="62" r="10" fill="#d9ad63"/>
+              <circle cx="240" cy="62" r="10" fill="#d9ad63"/>
+              <circle cx="180" cy="62" r="4" fill="#6e3e19"/>
+              <circle cx="240" cy="62" r="4" fill="#6e3e19"/>
+
+              <path class="dombra-wood-light" d="M162 452 Q180 432 210 430 Q240 432 258 452 L286 578 Q318 708 284 800 Q252 874 210 874 Q168 874 136 800 Q102 708 134 578 Z"/>
+              <path d="M177 472 Q210 462 243 472 L268 580 Q295 690 270 774 Q247 846 210 846 Q173 846 150 774 Q125 690 152 580 Z" fill="rgba(255, 233, 186, 0.12)"/>
+              <path class="dombra-trim" d="M171 448 Q210 438 249 448 L267 480 Q210 472 153 480 Z"/>
+
+              <ellipse class="dombra-hole" cx="210" cy="628" rx="52" ry="52"/>
+              <ellipse cx="210" cy="628" rx="30" ry="30" fill="rgba(10, 5, 3, 0.92)"/>
+              <path d="M158 618 Q210 600 262 618" stroke="rgba(236, 191, 104, 0.32)" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path d="M159 638 Q210 654 261 638" stroke="rgba(236, 191, 104, 0.22)" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+              <rect x="178" y="782" width="64" height="12" rx="6" fill="#4e2a15"/>
+              <rect x="186" y="790" width="48" height="16" rx="8" fill="#2d160b"/>
+
+              <line class="dombra-string-glow" x1="202" y1="88" x2="194" y2="796"/>
+              <line class="dombra-string-glow" x1="218" y1="88" x2="226" y2="796"/>
+              <line class="dombra-string" x1="202" y1="88" x2="194" y2="796"/>
+              <line class="dombra-string" x1="218" y1="88" x2="226" y2="796"/>
+
+              <line class="dombra-fret" x1="184" y1="128" x2="236" y2="126"/>
+              <line class="dombra-fret" x1="184" y1="164" x2="236" y2="162"/>
+              <line class="dombra-fret" x1="184" y1="204" x2="236" y2="202"/>
+              <line class="dombra-fret" x1="184" y1="246" x2="236" y2="244"/>
+              <line class="dombra-fret" x1="184" y1="292" x2="236" y2="290"/>
+              <line class="dombra-fret" x1="184" y1="342" x2="236" y2="340"/>
+              <line class="dombra-fret" x1="184" y1="394" x2="236" y2="392"/>
+            </svg>
+          </div>
+
+          <div class="stage-video-wrap">
+            <video
+              id="stageVideo"
+              class="stage-video"
+              preload="metadata"
+              muted
+              controls
+              playsinline
+              src="/media/dombra-video"
+            ></video>
+            <div class="stage-video-overlay">
+              <button id="resetStageBtn" class="reset-btn" type="button">Домбыраны қайта көрсету</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="card shell">
+          <h2>Қол камерасы</h2>
+          <p>Домбыра жолын көздеп жүргізу үшін камерадағы қол нүктесін қадағалаңыз.</p>
+
+          <div class="camera-frame" id="cameraFrame">
+            <video id="cameraVideo" playsinline autoplay muted aria-label="Камера көрінісі"></video>
+            <canvas id="cameraCanvas" aria-hidden="true"></canvas>
+            <div id="cameraFallback" class="camera-fallback">Камера мен MediaPipe жүктеліп жатыр...</div>
+            <div class="camera-overlay" aria-hidden="true">
+              <div id="cameraOverlayLabel" class="camera-overlay__label">Қол тану дайындалуда...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shell">
+          <div class="meter-head">
+            <span>Қимылдың жүруі</span>
+            <strong id="progressLabel">0%</strong>
+          </div>
+          <div class="meter-track">
+            <span id="progressFill" class="meter-fill"></span>
+          </div>
+          <p>Камера 2–3 секунд тұрақты қимылды көрсе, домбыра жоғалып, видео сол блоктың ішінде ашылады.</p>
+        </section>
+
+        <section class="card shell">
+          <h3>Қалай қолданасыз</h3>
+          <ul class="helper-list">
+            <li>Камераға рұқсат беріңіз.</li>
+            <li>Қолыңызды камера алдында анық көрсетіңіз.</li>
+            <li>Қолмен 2–3 секунд қимыл жасаңыз.</li>
+            <li>Қозғалыс жеткенде домбыра жасырылып, орнында видео шығады.</li>
+          </ul>
+        </section>
+
+        <section class="side-actions">
+          <a class="next-link" href="/">Басты бетке қайту</a>
+        </section>
+      </aside>
+    </section>
+
+    <footer>Локалды жоба: бөлек домбыра беті + MediaPipe JS</footer>
+  </div>
+
+  <script type="module" src="/dombra.js"></script>
+</body>
+</html>
