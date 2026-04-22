@@ -77,6 +77,12 @@
       margin-bottom: 18px;
     }
 
+    .topbar__links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     .back-link,
     .next-link,
     .reset-btn {
@@ -482,6 +488,13 @@
       transform: scaleX(-1);
     }
 
+    .camera-frame video {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .camera-frame canvas,
     .camera-fallback,
     .camera-overlay {
@@ -492,6 +505,7 @@
     .camera-frame canvas {
       z-index: 2;
       pointer-events: none;
+      background: linear-gradient(180deg, #040808, #0b1112);
     }
 
     .camera-fallback {
@@ -674,7 +688,10 @@
 <body>
   <div class="page">
     <div class="topbar">
-      <a class="back-link" href="/">Артқа</a>
+      <div class="topbar__links">
+        <a class="back-link" href="/">Артқа</a>
+        <a class="next-link" href="/test">Тестке өту</a>
+      </div>
       <div class="topbar__pill">Екінші бет • Домбыра</div>
     </div>
 
@@ -780,7 +797,7 @@
       <aside class="side-panel">
         <section class="card shell">
           <h2>Қол камерасы</h2>
-          <p>Домбыра жолын көздеп жүргізу үшін камерадағы қол нүктесін қадағалаңыз.</p>
+          <p>Домбыра жолын көздеп жүргізу үшін камерадағы саусақтарды қадағалаңыз. Қара фонда тек қолдың нүктелері мен сызықтары ғана көрінеді.</p>
 
           <div class="camera-frame" id="cameraFrame">
             <video id="cameraVideo" playsinline autoplay muted aria-label="Камера көрінісі"></video>
@@ -810,16 +827,18 @@
             <li>Қолыңызды камера алдында анық көрсетіңіз.</li>
             <li>Қолмен 2–3 секунд қимыл жасаңыз.</li>
             <li>Қозғалыс жеткенде домбыра жасырылып, орнында видео шығады.</li>
+            <li>Келесі бетте осы шығарма бойынша gesture-тест күтіп тұр.</li>
           </ul>
         </section>
 
         <section class="side-actions">
+          <a class="next-link" href="/test">«Күй аңызы» тесті</a>
           <a class="next-link" href="/">Басты бетке қайту</a>
         </section>
       </aside>
     </section>
 
-    <footer>Локалды жоба: бөлек домбыра беті + MediaPipe JS</footer>
+    <footer>Локалды жоба: бөлек домбыра беті + MediaPipe JS + dark hand-only камера</footer>
   </div>
 
   <script type="module" src="/dombra.js"></script>

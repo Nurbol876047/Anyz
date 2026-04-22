@@ -66,6 +66,11 @@ def dombra_page() -> Response:
     return send_file(BASE_DIR / "dombra.html")
 
 
+@app.get("/test")
+def test_page() -> Response:
+    return send_file(BASE_DIR / "test.html")
+
+
 @app.get("/app.js")
 def app_script() -> Response:
     return send_file(BASE_DIR / "app.js", mimetype="text/javascript")
@@ -74,6 +79,11 @@ def app_script() -> Response:
 @app.get("/dombra.js")
 def dombra_script() -> Response:
     return send_file(BASE_DIR / "dombra.js", mimetype="text/javascript")
+
+
+@app.get("/test.js")
+def test_script() -> Response:
+    return send_file(BASE_DIR / "test.js", mimetype="text/javascript")
 
 
 @app.get("/api/state")

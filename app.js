@@ -30,6 +30,15 @@ const SCENES = {
   }
 };
 
+const FINGER_CONNECTIONS = [
+  [1, 2], [2, 3], [3, 4],
+  [5, 6], [6, 7], [7, 8],
+  [9, 10], [10, 11], [11, 12],
+  [13, 14], [14, 15], [15, 16],
+  [17, 18], [18, 19], [19, 20]
+];
+const FINGER_TIPS = new Set([4, 8, 12, 16, 20]);
+
 const state = {
   camera_ready: false,
   current_gesture: 0,
@@ -291,35 +300,60 @@ function drawResults(result) {
   resizeCameraCanvas();
   clearCanvas();
 
-  // ✅ Рисуем видео с камеры на canvas (чтобы было видно лицо)
-  cameraContext.save();
-  cameraContext.scale(-1, 1);
-  cameraContext.drawImage(cameraVideo, -cameraCanvas.width, 0, cameraCanvas.width, cameraCanvas.height);
-  cameraContext.restore();
+  const gradient = cameraContext.createLinearGradient(0, 0, 0, cameraCanvas.height);
+  gradient.addColorStop(0, '#030708');
+  gradient.addColorStop(1, '#0a1416');
+  cameraContext.fillStyle = gradient;
+  cameraContext.fillRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+
+  const glow = cameraContext.createRadialGradient(
+    cameraCanvas.width * 0.5,
+    cameraCanvas.height * 0.45,
+    8,
+    cameraCanvas.width * 0.5,
+    cameraCanvas.height * 0.45,
+    cameraCanvas.width * 0.36
+  );
+  glow.addColorStop(0, 'rgba(112, 255, 152, 0.14)');
+  glow.addColorStop(1, 'rgba(112, 255, 152, 0)');
+  cameraContext.fillStyle = glow;
+  cameraContext.fillRect(0, 0, cameraCanvas.width, cameraCanvas.height);
 
   if (!result.landmarks.length) return;
 
   cameraContext.save();
-  cameraContext.lineWidth = Math.max(2, cameraCanvas.width / 320);
-  cameraContext.strokeStyle = 'rgba(93, 184, 243, 0.95)';
-  cameraContext.fillStyle = 'rgba(242, 210, 145, 0.95)';
+  cameraContext.lineCap = 'round';
+  cameraContext.lineJoin = 'round';
+  cameraContext.lineWidth = Math.max(3, cameraCanvas.width / 260);
+  cameraContext.strokeStyle = 'rgba(112, 255, 152, 0.92)';
+  cameraContext.shadowBlur = 18;
+  cameraContext.shadowColor = 'rgba(112, 255, 152, 0.28)';
 
   result.landmarks.forEach((handLandmarks) => {
-    HandLandmarker.HAND_CONNECTIONS.forEach((connection) => {
-      const start = handLandmarks[connection.start];
-      const end = handLandmarks[connection.end];
+    FINGER_CONNECTIONS.forEach(([startIndex, endIndex]) => {
+      const start = handLandmarks[startIndex];
+      const end = handLandmarks[endIndex];
       cameraContext.beginPath();
       cameraContext.moveTo(start.x * cameraCanvas.width, start.y * cameraCanvas.height);
       cameraContext.lineTo(end.x * cameraCanvas.width, end.y * cameraCanvas.height);
       cameraContext.stroke();
     });
 
-    handLandmarks.forEach((landmark) => {
+    handLandmarks.forEach((landmark, index) => {
+      if (index === 0) {
+        return;
+      }
+
       cameraContext.beginPath();
+      cameraContext.fillStyle = FINGER_TIPS.has(index)
+        ? 'rgba(230, 255, 215, 0.98)'
+        : 'rgba(112, 255, 152, 0.94)';
       cameraContext.arc(
         landmark.x * cameraCanvas.width,
         landmark.y * cameraCanvas.height,
-        Math.max(4, cameraCanvas.width / 150),
+        FINGER_TIPS.has(index)
+          ? Math.max(6, cameraCanvas.width / 110)
+          : Math.max(4, cameraCanvas.width / 150),
         0,
         Math.PI * 2
       );

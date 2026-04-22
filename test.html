@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Күй аңызы — Тест</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Marcellus&display=swap');
+
+    :root {
+      --bg: #090d0f;
+      --ink: #eef4e4;
+      --muted: #b8cdb8;
+      --gold: #e0be76;
+      --line: rgba(179, 230, 170, 0.14);
+      --panel: rgba(10, 18, 16, 0.78);
+      --shadow: 0 30px 60px rgba(0, 0, 0, 0.36);
+      --ok: #70ff98;
+      --ok-deep: #1a8b4f;
+      --bad: #ff7c7c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', serif;
+      background:
+        radial-gradient(circle at 14% 0%, rgba(85, 181, 121, 0.16), transparent 30%),
+        radial-gradient(circle at 88% 0%, rgba(237, 191, 105, 0.12), transparent 24%),
+        linear-gradient(180deg, #112019 0%, #050708 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.05;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0 4px,
+          rgba(255, 255, 255, 0.3) 4px 5px
+        );
+      mix-blend-mode: soft-light;
+    }
+
+    .page {
+      width: min(1460px, calc(100% - 26px));
+      margin: 0 auto;
+      padding: 26px 0 22px;
+    }
+
+    .shell {
+      border-radius: 28px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+        var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .nav-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .back-link,
+    .home-link,
+    .restart-btn,
+    .option-btn {
+      appearance: none;
+      border: 1px solid rgba(179, 230, 170, 0.16);
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: rgba(8, 16, 14, 0.84);
+      color: #eef4e4;
+      text-decoration: none;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .back-link:hover,
+    .home-link:hover,
+    .restart-btn:hover,
+    .option-btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(179, 230, 170, 0.34);
+    }
+
+    .topbar__pill,
+    .score-pill,
+    .mode-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .intro {
+      padding: 22px 24px 24px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: #cae0ca;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .intro h1 {
+      margin-top: 16px;
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+      font-size: clamp(2.2rem, 4.6vw, 4rem);
+      line-height: 1.04;
+      color: #f5fde8;
+      text-shadow: 0 0 28px rgba(95, 217, 135, 0.14);
+    }
+
+    .intro p {
+      max-width: 920px;
+      margin: 12px auto 0;
+      color: #d7e5d4;
+      font-size: clamp(1.04rem, 1.8vw, 1.2rem);
+      line-height: 1.45;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.82fr);
+      gap: 18px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .quiz-shell {
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+      isolation: isolate;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(112, 255, 152, 0.08), transparent 26%),
+        radial-gradient(circle at 82% 0%, rgba(224, 190, 118, 0.08), transparent 18%),
+        linear-gradient(180deg, rgba(11, 19, 16, 0.98) 0%, rgba(4, 8, 7, 1) 100%);
+    }
+
+    .quiz-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, transparent 0 45%, rgba(255, 255, 255, 0.016) 50%, transparent 55%),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0 58px,
+          rgba(255, 255, 255, 0.014) 58px 59px
+        );
+      opacity: 0.24;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .quiz-head,
+    .question-card,
+    .result-card,
+    .card {
+      position: relative;
+      z-index: 1;
+      border-radius: 24px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background: rgba(8, 15, 13, 0.72);
+      box-shadow: 0 22px 36px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(8px);
+    }
+
+    .quiz-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      flex-wrap: wrap;
+    }
+
+    .quiz-head h2,
+    .card h2,
+    .card h3,
+    .question-card h2,
+    .result-card h2 {
+      font-family: 'Marcellus', serif;
+      font-weight: 400;
+    }
+
+    .quiz-head h2 {
+      font-size: 1.5rem;
+      color: #f3fbe7;
+    }
+
+    .quiz-head p,
+    .card p {
+      color: #cfe1cf;
+      line-height: 1.42;
+      font-size: 1rem;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: #ddefda;
+      font-size: 1.02rem;
+    }
+
+    .progress-track,
+    .hold-meter {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .progress-fill,
+    .hold-meter__fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #e0be76, #70ff98);
+      transition: width 0.16s ease;
+    }
+
+    .question-card,
+    .result-card {
+      margin-top: 18px;
+      padding: 22px;
+    }
+
+    .question-counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(179, 230, 170, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      color: #d8ebd7;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+    }
+
+    .question-card h2,
+    .result-card h2 {
+      margin-top: 18px;
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      line-height: 1.12;
+      color: #f6fee9;
+    }
+
+    .question-text,
+    .result-card p {
+      margin-top: 14px;
+      color: #d8e6d4;
+      font-size: 1.2rem;
+      line-height: 1.42;
+    }
+
+    .status-line {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background: rgba(6, 11, 10, 0.84);
+      color: #dbe9d6;
+      font-size: 1.08rem;
+      line-height: 1.35;
+    }
+
+    .status-line.is-correct {
+      border-color: rgba(112, 255, 152, 0.34);
+      background: rgba(16, 55, 34, 0.74);
+      color: #eeffee;
+      box-shadow: 0 0 28px rgba(112, 255, 152, 0.12);
+    }
+
+    .status-line.is-wrong {
+      border-color: rgba(255, 124, 124, 0.28);
+      background: rgba(49, 15, 15, 0.76);
+      color: #ffeaea;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .option-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-height: 124px;
+      padding: 18px;
+      border-radius: 24px;
+      text-align: left;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+        rgba(8, 14, 13, 0.9);
+    }
+
+    .option-btn[disabled] {
+      cursor: default;
+      transform: none;
+      opacity: 0.92;
+    }
+
+    .option-btn.is-active {
+      border-color: rgba(224, 190, 118, 0.4);
+      box-shadow: 0 0 0 1px rgba(224, 190, 118, 0.18), 0 18px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .option-btn.is-correct {
+      border-color: rgba(112, 255, 152, 0.5);
+      background:
+        linear-gradient(180deg, rgba(112, 255, 152, 0.18), rgba(22, 69, 42, 0.18)),
+        rgba(8, 18, 12, 0.94);
+      box-shadow: 0 0 0 1px rgba(112, 255, 152, 0.2), 0 0 34px rgba(112, 255, 152, 0.14);
+    }
+
+    .option-btn.is-wrong {
+      border-color: rgba(255, 124, 124, 0.38);
+      background:
+        linear-gradient(180deg, rgba(255, 124, 124, 0.12), rgba(86, 16, 16, 0.1)),
+        rgba(18, 10, 10, 0.94);
+      animation: shake 0.35s ease;
+    }
+
+    .option-mark {
+      flex: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-family: 'Marcellus', serif;
+      font-size: 1.3rem;
+      color: #0b120f;
+      background: linear-gradient(135deg, #e0be76, #c3f7aa);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    }
+
+    .option-copy strong {
+      display: block;
+      font-size: 1.18rem;
+      line-height: 1.2;
+      color: #f0f7e7;
+    }
+
+    .option-copy span {
+      display: block;
+      margin-top: 8px;
+      color: #d1dfcf;
+      font-size: 1.02rem;
+      line-height: 1.34;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .score-item {
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(179, 230, 170, 0.1);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .score-item span {
+      display: block;
+      color: #abc0ac;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.74rem;
+    }
+
+    .score-item strong {
+      display: block;
+      margin-top: 8px;
+      color: #f5fde8;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .result-card {
+      display: none;
+    }
+
+    .result-card.is-visible {
+      display: block;
+    }
+
+    .answer-key {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .answer-key__item {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+      color: #d8e6d4;
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card h2 {
+      font-size: 1.56rem;
+      color: #f6fee9;
+    }
+
+    .card h3 {
+      font-size: 1.28rem;
+      color: #f2fae6;
+    }
+
+    .camera-frame {
+      position: relative;
+      margin-top: 16px;
+      aspect-ratio: 16 / 9;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background:
+        radial-gradient(circle at center, rgba(112, 255, 152, 0.07), transparent 36%),
+        linear-gradient(180deg, rgba(6, 10, 11, 0.96), rgba(1, 3, 3, 1));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .camera-frame video,
+    .camera-frame canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .camera-frame video {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .camera-frame canvas,
+    .camera-fallback,
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    .camera-frame canvas {
+      z-index: 2;
+      pointer-events: none;
+      background: linear-gradient(180deg, #040808, #0b1112);
+    }
+
+    .camera-fallback {
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: #dcead9;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      background:
+        radial-gradient(circle at top, rgba(112, 255, 152, 0.08), transparent 42%),
+        linear-gradient(180deg, rgba(5, 8, 8, 0.4), rgba(4, 8, 8, 0.94));
+      transition: opacity 0.3s ease;
+    }
+
+    .camera-fallback.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .camera-overlay {
+      z-index: 4;
+      display: grid;
+      align-content: end;
+      gap: 10px;
+      padding: 16px;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(5, 7, 7, 0) 56%, rgba(5, 7, 7, 0.7) 100%);
+    }
+
+    .camera-overlay__label {
+      color: #eef6e9;
+      font-size: 1rem;
+      line-height: 1.3;
+      text-shadow: 0 6px 16px rgba(0, 0, 0, 0.42);
+    }
+
+    .metric-grid,
+    .finger-map {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .metric span {
+      display: block;
+      color: #9fb59f;
+      font-size: 0.9rem;
+      line-height: 1.2;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      color: #f3fbe7;
+      font-size: 1.1rem;
+      line-height: 1.28;
+    }
+
+    .finger-map {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .finger-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(179, 230, 170, 0.12);
+      background: rgba(255, 255, 255, 0.02);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .finger-card.is-active {
+      border-color: rgba(112, 255, 152, 0.38);
+      box-shadow: 0 0 0 1px rgba(112, 255, 152, 0.16), 0 0 26px rgba(112, 255, 152, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .finger-card strong {
+      display: block;
+      font-family: 'Marcellus', serif;
+      font-size: 1.25rem;
+      color: #f5fde8;
+    }
+
+    .finger-card span {
+      display: block;
+      margin-top: 6px;
+      color: #c9d8c8;
+      font-size: 0.98rem;
+      line-height: 1.3;
+    }
+
+    .helper-list {
+      margin-top: 12px;
+      padding-left: 18px;
+      color: #d6e4d3;
+      line-height: 1.42;
+      font-size: 1rem;
+      display: grid;
+      gap: 8px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .fireworks-canvas {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    footer {
+      margin-top: 18px;
+      text-align: center;
+      color: #96a99a;
+      font-size: 0.96rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    @media (max-width: 1100px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100%, calc(100% - 18px));
+        padding-top: 18px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .quiz-shell,
+      .card,
+      .question-card,
+      .result-card {
+        border-radius: 22px;
+      }
+
+      .option-grid,
+      .scoreboard,
+      .answer-key,
+      .metric-grid,
+      .finger-map {
+        grid-template-columns: 1fr;
+      }
+
+      .question-card,
+      .result-card,
+      .card {
+        padding: 18px;
+      }
+
+      .option-btn {
+        min-height: 108px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="nav-group">
+        <a class="back-link" href="/dombra">Артқа: домбыра</a>
+        <a class="home-link" href="/">Басты бет</a>
+      </div>
+      <div class="topbar__pill">Үшінші бет • Тест</div>
+    </div>
+
+    <section class="intro shell">
+      <div class="eyebrow">Жестпен жауап беру</div>
+      <h1>«Күй аңызы» тесті</h1>
+      <p>
+        Бұл бетте 10 сұрақ бар. Жауапты батырмамен де, камераға
+        <strong>1-4 саусақ</strong> көрсетіп те таңдауға болады:
+        <strong>1 = А</strong>, <strong>2 = Ә</strong>, <strong>3 = Б</strong>, <strong>4 = В</strong>.
+        Дұрыс жауап табылғанда жасыл салют жанады да, келесі сұрақ бірден ашылады.
+      </p>
+    </section>
+
+    <section class="workspace">
+      <section class="quiz-shell shell">
+        <canvas id="fireworksCanvas" class="fireworks-canvas" aria-hidden="true"></canvas>
+
+        <div class="quiz-head">
+          <div>
+            <h2>Кезең-кезеңімен жауап беру</h2>
+            <p>Тест дұрыс жауаппен жалғасады. Қате болса, сол сұрақта тағы жауап беруге болады.</p>
+          </div>
+          <div class="mode-pill">Gesture + Tap</div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span id="progressLabel">Сұрақ 1 / 10</span>
+            <span id="scorePill" class="score-pill">Ұпай: 0 / 10</span>
+          </div>
+          <div class="progress-track">
+            <span id="progressFill" class="progress-fill"></span>
+          </div>
+        </div>
+
+        <div id="questionCard" class="question-card">
+          <div id="questionCounter" class="question-counter">Сұрақ 1</div>
+          <h2 id="questionPrompt">Жүктеліп жатыр...</h2>
+          <p id="questionText" class="question-text">Сұрақ мәтіні дайындалуда...</p>
+
+          <div id="statusLine" class="status-line">
+            Камераға қолыңызды көрсетіңіз немесе төмендегі жауап батырмасын басыңыз.
+          </div>
+
+          <div id="optionGrid" class="option-grid"></div>
+
+          <div class="scoreboard">
+            <div class="score-item">
+              <span>Дұрыс жауап</span>
+              <strong id="correctCount">0</strong>
+            </div>
+            <div class="score-item">
+              <span>Қате жауап</span>
+              <strong id="wrongCount">0</strong>
+            </div>
+            <div class="score-item">
+              <span>Таңдалған белгі</span>
+              <strong id="selectedLabel">—</strong>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultCard" class="result-card">
+          <h2 id="resultTitle">Тест аяқталды</h2>
+          <p id="resultText">Қорытынды есептеліп жатыр...</p>
+
+          <div class="scoreboard">
+            <div class="score-item">
+              <span>Ұпай</span>
+              <strong id="resultScore">0 / 10</strong>
+            </div>
+            <div class="score-item">
+              <span>Дұрыс</span>
+              <strong id="resultCorrect">0</strong>
+            </div>
+            <div class="score-item">
+              <span>Қате</span>
+              <strong id="resultWrong">0</strong>
+            </div>
+          </div>
+
+          <div id="answerKey" class="answer-key"></div>
+
+          <button id="restartBtn" class="restart-btn" type="button">Тестті қайта бастау</button>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="card shell">
+          <h2>Қол камерасы</h2>
+          <p>Бүкіл жобадағыдай камерада тек саусақтар қара фонда көрсетіледі. Бет не басқа нысандар көрінбейді.</p>
+
+          <div id="cameraFrame" class="camera-frame">
+            <video id="cameraVideo" playsinline autoplay muted aria-label="Қол камерасы"></video>
+            <canvas id="cameraCanvas" aria-hidden="true"></canvas>
+            <div id="cameraFallback" class="camera-fallback">Камера мен MediaPipe жүктеліп жатыр...</div>
+            <div class="camera-overlay" aria-hidden="true">
+              <div id="cameraOverlayLabel" class="camera-overlay__label">Қол тану дайындалуда...</div>
+              <div class="hold-meter">
+                <span id="holdFill" class="hold-meter__fill"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric">
+              <span>Камера күйі</span>
+              <strong id="cameraState">Жүктелуде...</strong>
+            </div>
+            <div class="metric">
+              <span>Танылған белгі</span>
+              <strong id="gestureState">—</strong>
+            </div>
+            <div class="metric">
+              <span>Сұрақ нөмірі</span>
+              <strong id="questionState">1 / 10</strong>
+            </div>
+            <div class="metric">
+              <span>Таңдау дайындығы</span>
+              <strong id="systemState">Gesture жүйесі іске қосылып жатыр...</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shell">
+          <h3>Саусақ сәйкестігі</h3>
+          <div class="finger-map">
+            <div id="fingerCard1" class="finger-card">
+              <strong>1 саусақ = А</strong>
+              <span>Бірінші жауап нұсқасы</span>
+            </div>
+            <div id="fingerCard2" class="finger-card">
+              <strong>2 саусақ = Ә</strong>
+              <span>Екінші жауап нұсқасы</span>
+            </div>
+            <div id="fingerCard3" class="finger-card">
+              <strong>3 саусақ = Б</strong>
+              <span>Үшінші жауап нұсқасы</span>
+            </div>
+            <div id="fingerCard4" class="finger-card">
+              <strong>4 саусақ = В</strong>
+              <span>Төртінші жауап нұсқасы</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card shell">
+          <h3>Қалай қолданасыз</h3>
+          <ul class="helper-list">
+            <li>Камераға рұқсат беріңіз.</li>
+            <li>Жауапты батырмамен таңдауға да болады.</li>
+            <li>Жестпен таңдауда 1-4 саусақты шамамен 0.8 секунд ұстап тұрыңыз.</li>
+            <li>Дұрыс жауаптан кейін жасыл салют шығып, келесі сұрақ ашылады.</li>
+            <li>Қате жауап болса, сол сұраққа қайта жауап бересіз.</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+
+    <footer>Локалды жоба: «Күй аңызы» тесті + MediaPipe gesture жауап беру</footer>
+  </div>
+
+  <script type="module" src="/test.js"></script>
+</body>
+</html>

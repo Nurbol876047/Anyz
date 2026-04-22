@@ -911,6 +911,13 @@
       transform: scaleX(-1);
     }
 
+    .camera-frame video {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .camera-frame canvas,
     .camera-fallback,
     .camera-overlay {
@@ -921,6 +928,7 @@
     .camera-frame canvas {
       z-index: 2;
       pointer-events: none;
+      background: linear-gradient(180deg, #040808, #0b1112);
     }
 
     .camera-fallback {
@@ -2073,7 +2081,7 @@
       <aside class="camera-shell shell">
         <div class="camera-head">
           <h2>Қолмен басқару панелі</h2>
-          <p>Енді MediaPipe браузердің ішінде JavaScript арқылы жұмыс істейді. 1 саусақ бірінші тректі, 2 саусақ “Бозінген” күйін іске қосады.</p>
+          <p>Енді MediaPipe браузердің ішінде JavaScript арқылы жұмыс істейді. Камерада тек саусақтар қара фонда көрінеді: 1 саусақ бірінші тректі, 2 саусақ “Бозінген” күйін іске қосады.</p>
         </div>
 
         <button id="unlockBtn" class="unlock-btn">Дыбысты іске қосу</button>
@@ -2137,12 +2145,13 @@
             <li>Камераға тек 1 саусақ не 2 саусақ анық көрсетіңіз.</li>
             <li>2 саусақ танылған соң Жаңыл нарды дою қалпына келеді.</li>
             <li>3 секунд өткенде ғана сүт ағады. 1 саусақта сүт болмайды.</li>
+            <li>Келесі беттерде домбыра экраны мен gesture-тест те бар.</li>
           </ul>
         </div>
       </aside>
     </section>
 
-    <footer>Локалды жоба: Frontend MediaPipe JS + веб-сахна</footer>
+    <footer>Локалды жоба: Frontend MediaPipe JS + веб-сахна + dark hand-only камера</footer>
   </div>
 
   <audio id="audioOne" preload="auto" src="/media/one"></audio>
