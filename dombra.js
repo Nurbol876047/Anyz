@@ -52,6 +52,24 @@ let handLandmarker;
 let lastVideoTime = -1;
 let rafId = 0;
 let stream;
+let audioUnlocked = false;
+let audioUnlockPromise = null;
+
+function readAudioIntent() {
+  try {
+    return sessionStorage.getItem('dombraAudioIntent');
+  } catch {
+    return null;
+  }
+}
+
+function clearAudioIntent() {
+  try {
+    sessionStorage.removeItem('dombraAudioIntent');
+  } catch {
+    // Ignore sessionStorage errors in restrictive browsers.
+  }
+}
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
@@ -97,6 +115,8 @@ function resetInteraction(title, text) {
 function resetStageView() {
   stageVideo.pause();
   stageVideo.currentTime = 0;
+  stageVideo.muted = false;
+  stageVideo.volume = 1;
   state.videoActive = false;
   state.cursorVisible = false;
   state.cameraLabel = state.cameraReady
@@ -107,6 +127,39 @@ function resetStageView() {
     'Камера алдында қолыңызды 2–3 секунд қимылдатыңыз. Сонда видео осы блоктың ішінде ашылады.'
   );
   render();
+}
+
+async function unlockVideoAudio() {
+  if (audioUnlocked || !state.videoReady) {
+    return audioUnlocked;
+  }
+
+  if (audioUnlockPromise) {
+    return audioUnlockPromise;
+  }
+
+  audioUnlockPromise = (async () => {
+    const previousTime = stageVideo.currentTime;
+    stageVideo.muted = false;
+    stageVideo.volume = 1;
+
+    try {
+      await stageVideo.play();
+      stageVideo.pause();
+      stageVideo.currentTime = previousTime || 0;
+      audioUnlocked = true;
+      clearAudioIntent();
+      return true;
+    } catch (error) {
+      stageVideo.pause();
+      stageVideo.currentTime = previousTime || 0;
+      return false;
+    } finally {
+      audioUnlockPromise = null;
+    }
+  })();
+
+  return audioUnlockPromise;
 }
 
 async function triggerVideo() {
@@ -121,12 +174,23 @@ async function triggerVideo() {
   render();
 
   try {
+    await unlockVideoAudio();
     stageVideo.currentTime = 0;
+    stageVideo.muted = false;
+    stageVideo.volume = 1;
     await stageVideo.play();
   } catch (error) {
-    state.statusTitle = 'Видео автоматты түрде ашылмады';
-    state.statusText = 'Плеердегі ойнату батырмасын басып көріңіз.';
-    render();
+    try {
+      stageVideo.muted = true;
+      await stageVideo.play();
+      state.statusTitle = 'Видео қосылды, бірақ дыбыс бұғатталды';
+      state.statusText = 'Браузер дыбысты бірден ашпады. Бетті бір рет түртіп көрсеңіз, келесі қосылуда дыбыс бірге шығады.';
+      render();
+    } catch (fallbackError) {
+      state.statusTitle = 'Видео автоматты түрде ашылмады';
+      state.statusText = 'Плеердегі ойнату батырмасын басып көріңіз.';
+      render();
+    }
   }
 }
 
@@ -288,6 +352,7 @@ async function startCamera() {
   state.cameraReady = true;
   state.cameraStatus = 'Камера дайын';
   state.cameraLabel = 'Қолды домбыраның жоғары жағына апарыңыз';
+  await unlockVideoAudio();
   render();
 }
 
@@ -308,10 +373,30 @@ async function createHandLandmarker() {
 function attachListeners() {
   resetStageBtn.addEventListener('click', resetStageView);
 
+  const tryUnlockAudio = () => {
+    unlockVideoAudio();
+  };
+
+  window.addEventListener('pointerdown', tryUnlockAudio, { passive: true });
+  window.addEventListener('keydown', tryUnlockAudio);
+
+  if (readAudioIntent()) {
+    unlockVideoAudio();
+  }
+
   stageVideo.addEventListener('playing', () => {
+    stageVideo.muted = false;
+    stageVideo.volume = 1;
     state.statusTitle = 'Видео ойнап тұр';
     state.statusText = 'Домбыра орнын видео алды. Қайта көру үшін домбыраны қайта көрсету батырмасын қолдануға болады.';
     render();
+  });
+
+  stageVideo.addEventListener('volumechange', () => {
+    if (!stageVideo.muted && stageVideo.volume > 0) {
+      audioUnlocked = true;
+      clearAudioIntent();
+    }
   });
 
   stageVideo.addEventListener('ended', () => {

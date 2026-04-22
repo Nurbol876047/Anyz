@@ -541,6 +541,14 @@ async function init() {
 
 unlockBtn.addEventListener('click', unlockAudio);
 
+document.querySelector('.dombra-shortcut')?.addEventListener('click', () => {
+  try {
+    sessionStorage.setItem('dombraAudioIntent', String(Date.now()));
+  } catch (error) {
+    // Ignore sessionStorage issues and continue navigation.
+  }
+});
+
 window.addEventListener('beforeunload', () => {
   if (rafId) {
     cancelAnimationFrame(rafId);
